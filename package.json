@@ -1,0 +1,19 @@
+{
+  "name": "dissertation",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "webpack && cp public/manifest.json dist/"
+  },
+  "author": "Boda Norbert",
+  "devDependencies": {
+    "@types/chrome": "^0.3.0",
+    "ts-loader": "^9.6.2",
+    "typescript": "^5.9.3",
+    "webpack": "^5.111.1",
+    "webpack-cli": "^7.2.3"
+  },
+  "dependencies": {
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0"
+  }
+}
