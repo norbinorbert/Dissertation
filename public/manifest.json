@@ -1,10 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Object Censor PoC",
-  "version": "1.0",
-  "description": "Scans images and draws black boxes over targeted objects (people, dogs).",
-  "permissions": ["activeTab", "scripting"],
+  "version": "0.2.0",
+  "description": "Scans images and videos using local AI.",
+  "permissions": ["activeTab", "scripting", "declarativeNetRequest"],
   "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "cors_rules",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },

@@ -148,7 +148,13 @@ async function processImage(
 // --- VIDEO HANDLING --- //
 
 function processVideo(video: HTMLVideoElement, model: cocoSsd.ObjectDetection) {
+  // Force the video to use the CORS headers our extension just injected
+  if (video.crossOrigin !== "anonymous") {
+    video.crossOrigin = "anonymous";
+  }
+
   video.addEventListener("play", () => runVideoDetectionLoop(video, model));
+
   if (!video.paused && !video.ended) {
     runVideoDetectionLoop(video, model);
   }

@@ -1,8 +1,8 @@
 {
   "name": "dissertation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "scripts": {
-    "build": "webpack && cp public/manifest.json dist/"
+    "build": "webpack && cp public/manifest.json dist/ && cp public/rules.json dist/"
   },
   "author": "Boda Norbert",
   "devDependencies": {
