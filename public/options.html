@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Object Censor – Settings</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <img src="icons/icon-32.png" alt="" />
+        <div>
+          <h1>Object Censor settings</h1>
+          <p class="muted">Changes are saved automatically and apply to open pages immediately.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>Censored objects</h2>
+        <p class="muted" style="margin-bottom: 10px">
+          The detector recognises these object classes; unticked classes are ignored.
+        </p>
+        <div class="checkbox-grid" id="classes"></div>
+      </section>
+
+      <section class="card">
+        <h2>Detection</h2>
+        <div class="field">
+          <label for="min-score">
+            Minimum confidence
+            <small>Lower values censor more aggressively but produce more false positives.</small>
+          </label>
+          <span class="value" id="min-score-value"></span>
+          <input type="range" id="min-score" min="30" max="95" step="5" />
+        </div>
+        <div class="field">
+          <label for="min-size">
+            Ignore media smaller than
+            <small>Icons and avatars below this size (px) are shown without analysis.</small>
+          </label>
+          <input type="number" id="min-size" min="8" max="512" step="1" />
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Appearance</h2>
+        <div class="field">
+          <label for="blur-radius">
+            Blur strength
+            <small>Applied to media that has not been analysed yet.</small>
+          </label>
+          <span class="value" id="blur-radius-value"></span>
+          <input type="range" id="blur-radius" min="4" max="80" step="2" />
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Media that cannot be analysed</h2>
+        <p class="muted" style="margin-bottom: 10px">
+          Some media cannot be read: DRM protected video, cross-origin video without CORS headers, or
+          images the engine cannot fetch.
+        </p>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="policy" value="blur" />
+            <span>Keep it blurred <small class="muted">(recommended)</small></span>
+          </label>
+          <label>
+            <input type="radio" name="policy" value="show" />
+            <span>Show it uncensored</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Disabled sites</h2>
+        <p class="muted" style="margin-bottom: 10px">
+          One hostname per line. Subdomains are included (<code>example.com</code> also covers
+          <code>images.example.com</code>).
+        </p>
+        <textarea id="disabled-sites" spellcheck="false" placeholder="example.com"></textarea>
+      </section>
+
+      <section class="card">
+        <h2>Advanced</h2>
+        <div class="field">
+          <label for="debug">
+            Verbose logging
+            <small>Writes diagnostic messages to the page and engine consoles.</small>
+          </label>
+          <input type="checkbox" id="debug" />
+        </div>
+      </section>
+
+      <div class="actions">
+        <span class="toast" id="toast">Saved</span>
+        <button type="button" id="reset">Reset to defaults</button>
+      </div>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

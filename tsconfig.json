@@ -1,9 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "target": "es2020",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

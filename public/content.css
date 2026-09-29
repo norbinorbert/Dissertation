@@ -1,0 +1,17 @@
+/*
+ * Object Censor – injected at document_start into every frame.
+ *
+ * Media is blurred until the content script has analysed it and set data-oc-state.
+ * `data-oc-off` on <html> (extension disabled for this site) switches everything off,
+ * `data-oc-policy="blur"` keeps media the engine could not analyse hidden.
+ * The same rules are injected into shadow roots by the content script.
+ */
+html:not([data-oc-off]) img:not([data-oc-state]),
+html:not([data-oc-off]) video:not([data-oc-state]),
+html:not([data-oc-off])[data-oc-policy="blur"] img[data-oc-state="failed"],
+html:not([data-oc-off])[data-oc-policy="blur"] video[data-oc-state="failed"],
+/* Fullscreen video cannot be overlaid with boxes; hide it entirely if it has hits. */
+html:not([data-oc-off]) video:fullscreen[data-oc-state="censored"] {
+  filter: blur(var(--oc-blur, 20px)) !important;
+  clip-path: inset(0) !important;
+}

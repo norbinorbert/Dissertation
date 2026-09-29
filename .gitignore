@@ -142,3 +142,9 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+### Object Censor ###
+# Model weights are downloaded by `npm run fetch-model` (see scripts/fetch-model.mjs)
+public/model/
+# Downloaded fixtures and Chrome profiles created by the test scripts
+tests/.artifacts/

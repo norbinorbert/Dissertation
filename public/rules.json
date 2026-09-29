@@ -13,7 +13,7 @@
       ]
     },
     "condition": {
-      "resourceTypes": ["media", "xmlhttprequest"]
+      "resourceTypes": ["media"]
     }
   }
 ]

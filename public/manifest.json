@@ -1,26 +1,51 @@
 {
   "manifest_version": 3,
-  "name": "Object Censor PoC",
-  "version": "0.2.0",
-  "description": "Scans images and videos using local AI.",
-  "permissions": ["activeTab", "scripting", "declarativeNetRequest"],
-  "host_permissions": ["<all_urls>"],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "cors_rules",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
+  "name": "Object Censor",
+  "version": "1.0.0",
+  "description": "Blurs images and videos until an on-device object detector has checked them, then covers detected objects with black boxes.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
+  "permissions": ["storage", "offscreen", "declarativeNetRequest", "activeTab"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Object Censor",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "css": ["content.css"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_origin_as_fallback": true
     }
-  ]
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "media_cors",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
 }

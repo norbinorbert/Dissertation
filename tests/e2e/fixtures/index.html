@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Object Censor e2e fixture</title>
+    <style>
+      body {
+        margin: 20px;
+        font-family: sans-serif;
+      }
+      .row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      figure {
+        margin: 0;
+      }
+      img,
+      video {
+        display: block;
+        background: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Object Censor fixture</h1>
+    <div class="row">
+      <figure>
+        <img id="same-origin" src="/cat.jpg" width="320" alt="cat, same origin" />
+        <figcaption>same-origin</figcaption>
+      </figure>
+      <figure>
+        <img id="cross-origin" src="__CROSS_ORIGIN__/cat.jpg" width="320" alt="cat, cross origin" />
+        <figcaption>cross-origin</figcaption>
+      </figure>
+      <figure>
+        <img id="plain" width="320" alt="plain gradient" />
+        <figcaption>plain (data: URL)</figcaption>
+      </figure>
+      <figure>
+        <img id="tiny" src="/cat.jpg" width="16" height="16" alt="tiny" />
+        <figcaption>tiny</figcaption>
+      </figure>
+      <figure>
+        <video id="poster" poster="/cat.jpg" width="320" height="240" preload="none" src="/missing.mp4"></video>
+        <figcaption>video poster</figcaption>
+      </figure>
+      <figure>
+        <div id="shadow-host"></div>
+        <figcaption>inside shadow DOM</figcaption>
+      </figure>
+    </div>
+
+    <script>
+      // A flat gradient contains none of the censored classes: expected to end up "clean".
+      const canvas = document.createElement("canvas");
+      canvas.width = 400;
+      canvas.height = 300;
+      const ctx = canvas.getContext("2d");
+      const gradient = ctx.createLinearGradient(0, 0, 400, 300);
+      gradient.addColorStop(0, "#3b82f6");
+      gradient.addColorStop(1, "#f59e0b");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 400, 300);
+      window.PLAIN_DATA_URL = canvas.toDataURL("image/png");
+      document.getElementById("plain").src = window.PLAIN_DATA_URL;
+
+      const root = document.getElementById("shadow-host").attachShadow({ mode: "open" });
+      root.innerHTML = '<img id="shadow-img" src="/cat.jpg" width="320" alt="cat in shadow root" />';
+    </script>
+  </body>
+</html>

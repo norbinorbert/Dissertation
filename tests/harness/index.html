@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Object Censor content-script harness</title>
+    <!-- Stands in for the stylesheet the manifest injects at document_start. -->
+    <link rel="stylesheet" href="/content.css" />
+    <script src="/mock-chrome.js"></script>
+    <!-- The real content script, loaded before any media exists (document_start semantics). -->
+    <script src="/content.js"></script>
+    <style>
+      body {
+        margin: 20px;
+        font-family: sans-serif;
+      }
+      .row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      img,
+      video {
+        display: block;
+      }
+      #scroller {
+        width: 320px;
+        height: 150px;
+        overflow: auto;
+        border: 1px solid #999;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Harness</h1>
+    <div class="row">
+      <img id="square" width="300" height="300" alt="square: the fake engine reports a hit" />
+      <img id="wide" width="400" height="300" alt="wide: the fake engine reports nothing" />
+      <img id="tiny" width="16" height="16" alt="tiny" />
+      <img id="remote" src="http://localhost:__PORT__/icon.png" width="300" height="300" alt="cross-origin URL" />
+      <img id="svg" width="120" height="120" alt="vector" />
+      <div id="shadow-host"></div>
+      <video id="stream" width="300" height="300" muted autoplay playsinline></video>
+      <div id="scroller"><div style="height: 400px"></div><img id="clipped" width="300" height="300" alt="clipped by scroller" /></div>
+    </div>
+    <script>
+      function squarePng(size, color) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, size, size);
+        return canvas.toDataURL("image/png");
+      }
+      function widePng() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 400;
+        canvas.height = 300;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#4488cc";
+        ctx.fillRect(0, 0, 400, 300);
+        return canvas.toDataURL("image/png");
+      }
+      window.SQUARE = squarePng(300, "#c0392b");
+      window.SQUARE_ALT = squarePng(300, "#27ae60");
+      window.WIDE = widePng();
+
+      document.getElementById("square").src = window.SQUARE;
+      document.getElementById("wide").src = window.WIDE;
+      document.getElementById("tiny").src = window.SQUARE;
+      document.getElementById("clipped").src = window.SQUARE;
+      document.getElementById("svg").src =
+        "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><circle cx="60" cy="60" r="50"/></svg>');
+
+      const root = document.getElementById("shadow-host").attachShadow({ mode: "open" });
+      root.innerHTML = '<img id="shadow-img" width="300" height="300" alt="in shadow root" />';
+      root.getElementById("shadow-img").src = window.SQUARE;
+
+      // A live square video fed from a canvas: exercises the frame loop without media files.
+      const streamCanvas = document.createElement("canvas");
+      streamCanvas.width = 300;
+      streamCanvas.height = 300;
+      const streamCtx = streamCanvas.getContext("2d");
+      let hue = 0;
+      setInterval(() => {
+        hue = (hue + 7) % 360;
+        streamCtx.fillStyle = `hsl(${hue} 70% 50%)`;
+        streamCtx.fillRect(0, 0, 300, 300);
+      }, 40);
+      const video = document.getElementById("stream");
+      video.srcObject = streamCanvas.captureStream(25);
+      video.play().catch(() => {});
+    </script>
+  </body>
+</html>

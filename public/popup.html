@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Object Censor</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        width: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <img src="icons/icon-32.png" alt="" />
+      <h1>Object Censor</h1>
+    </header>
+
+    <div class="row">
+      <div class="label">
+        <span>Censoring</span>
+        <small>Blur and box detected objects everywhere</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="enabled" />
+        <span></span>
+      </label>
+    </div>
+
+    <div class="row">
+      <div class="label">
+        <span>This site</span>
+        <small id="site-host">Not available for this page</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="site-enabled" disabled />
+        <span></span>
+      </label>
+    </div>
+
+    <div class="row">
+      <div class="label">
+        <span>Detection engine</span>
+        <small class="status" id="engine-status" data-level="">Checking…</small>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="muted" id="classes"></span>
+      <button id="open-options" type="button">Settings</button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
