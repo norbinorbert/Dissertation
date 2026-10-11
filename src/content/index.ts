@@ -22,9 +22,16 @@ const BLUR_VARIABLE = "--oc-blur";
 function shadowStylesheetText(settings: Settings, active: boolean): string {
   if (!active) return "";
   const blur = `filter: blur(${settings.blurRadius}px) !important; clip-path: inset(0) !important;`;
-  const selectors = ['img:not([data-oc-state])', 'video:not([data-oc-state])', 'video:fullscreen[data-oc-state="censored"]'];
+  const selectors = [
+    "img:not([data-oc-state])",
+    "video:not([data-oc-state])",
+    'video:fullscreen[data-oc-state="censored"]',
+  ];
   if (settings.unprocessablePolicy === "blur") {
-    selectors.push('img[data-oc-state="failed"]', 'video[data-oc-state="failed"]');
+    selectors.push(
+      'img[data-oc-state="failed"]',
+      'video[data-oc-state="failed"]',
+    );
   }
   return `${selectors.join(",\n")} { ${blur} }`;
 }
@@ -36,7 +43,10 @@ class CensorController implements MediaTrackerDelegate {
   private readonly videos: VideoProcessor;
   private readonly tracker: MediaTracker;
   private readonly shadowSheet: CSSStyleSheet | null;
-  private readonly shadowStyleElements = new WeakMap<ShadowRoot, HTMLStyleElement>();
+  private readonly shadowStyleElements = new WeakMap<
+    ShadowRoot,
+    HTMLStyleElement
+  >();
   private readonly shadowRoots = new Set<WeakRef<ShadowRoot>>();
   private running = false;
   private shutDown = false;
@@ -129,11 +139,17 @@ class CensorController implements MediaTrackerDelegate {
   }
 
   onShadowRoot(root: ShadowRoot): void {
-    const css = shadowStylesheetText(this.settings.settings, this.settings.active);
+    const css = shadowStylesheetText(
+      this.settings.settings,
+      this.settings.active,
+    );
     if (this.shadowSheet) {
       try {
         if (!root.adoptedStyleSheets.includes(this.shadowSheet)) {
-          root.adoptedStyleSheets = [...root.adoptedStyleSheets, this.shadowSheet];
+          root.adoptedStyleSheets = [
+            ...root.adoptedStyleSheets,
+            this.shadowSheet,
+          ];
         }
         return;
       } catch {

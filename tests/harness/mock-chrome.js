@@ -10,7 +10,13 @@
     settings: {
       enabled: true,
       disabledSites: [],
-      classes: { person: true, dog: true, cat: true, knife: true, bottle: true },
+      classes: {
+        person: true,
+        dog: true,
+        cat: true,
+        knife: true,
+        bottle: true,
+      },
       minScore: 0.5,
       blurRadius: 20,
       unprocessablePolicy: "blur",
@@ -44,16 +50,26 @@
     harness.detectCalls++;
     if (request.priority === 0) harness.frameCalls++;
     else harness.imageCalls++;
-    if (harness.engineDelayMs) await new Promise((r) => setTimeout(r, harness.engineDelayMs));
+    if (harness.engineDelayMs)
+      await new Promise((r) => setTimeout(r, harness.engineDelayMs));
     if (request.source.kind === "url") {
       harness.urlCalls++;
-      return { type: "error", id: request.id, code: "fetch", error: "HTTP 403 (fake)" };
+      return {
+        type: "error",
+        id: request.id,
+        code: "fetch",
+        error: "HTTP 403 (fake)",
+      };
     }
     const image = await decode(request.source.dataUrl);
     const { naturalWidth: width, naturalHeight: height } = image;
     const detections = [];
     if (Math.abs(width - height) <= 2) {
-      detections.push({ class: "person", score: 0.9, box: [width * 0.25, height * 0.25, width * 0.5, height * 0.5] });
+      detections.push({
+        class: "person",
+        score: 0.9,
+        box: [width * 0.25, height * 0.25, width * 0.5, height * 0.5],
+      });
     }
     return { type: "result", id: request.id, width, height, detections };
   }
@@ -69,7 +85,8 @@
       onMessage: { addListener: (fn) => messageListeners.add(fn) },
       onDisconnect: { addListener: (fn) => disconnectListeners.add(fn) },
       postMessage(message) {
-        if (harness.contextInvalidated) throw new Error("Attempting to use a disconnected port object");
+        if (harness.contextInvalidated)
+          throw new Error("Attempting to use a disconnected port object");
         if (message.type !== "detect") return;
         detect(message).then((reply) => {
           for (const fn of messageListeners) fn(reply);
@@ -82,7 +99,8 @@
     };
     ports.add(port);
     setTimeout(() => {
-      for (const fn of messageListeners) fn({ type: "status", ready: true, backend: "fake", error: null });
+      for (const fn of messageListeners)
+        fn({ type: "status", ready: true, backend: "fake", error: null });
     }, 0);
     return port;
   }
@@ -93,9 +111,11 @@
       lastError: undefined,
       getURL: (path) => `http://fake-extension/${path}`,
       sendMessage(message) {
-        if (harness.contextInvalidated) return Promise.reject(new Error("Extension context invalidated."));
+        if (harness.contextInvalidated)
+          return Promise.reject(new Error("Extension context invalidated."));
         harness.log.push(`sendMessage ${message.type}`);
-        if (message.type === "engine:ensure") return Promise.resolve({ ok: true });
+        if (message.type === "engine:ensure")
+          return Promise.resolve({ ok: true });
         return Promise.resolve(undefined);
       },
       connect: ({ name }) => createPort(name),
@@ -108,7 +128,8 @@
           for (const [key, value] of Object.entries(items)) {
             const oldValue = storage[key];
             storage[key] = value;
-            for (const fn of storageListeners) fn({ [key]: { oldValue, newValue: value } }, "sync");
+            for (const fn of storageListeners)
+              fn({ [key]: { oldValue, newValue: value } }, "sync");
           }
         },
       },
@@ -123,7 +144,9 @@
   };
 
   window.__harness.updateSettings = (patch) =>
-    window.chrome.storage.sync.set({ settings: { ...storage.settings, ...patch } });
+    window.chrome.storage.sync.set({
+      settings: { ...storage.settings, ...patch },
+    });
   window.__harness.invalidateContext = () => {
     harness.contextInvalidated = true;
     window.chrome.runtime.id = undefined;

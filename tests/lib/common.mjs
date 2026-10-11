@@ -9,7 +9,8 @@ export const artifactsDir = path.join(rootDir, "tests", ".artifacts");
 export const fixtureImage = path.join(artifactsDir, "cat.jpg");
 
 // "Cat03.jpg" from Wikimedia Commons (CC BY-SA 3.0, Von.grzanka) – downloaded on demand, never committed.
-const FIXTURE_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/500px-Cat03.jpg";
+const FIXTURE_IMAGE_URL =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/500px-Cat03.jpg";
 
 export async function exists(file) {
   try {
@@ -26,7 +27,9 @@ export async function ensureFixtureImage() {
   console.log(`Downloading fixture image from ${FIXTURE_IMAGE_URL}`);
   for (let attempt = 1; attempt <= 3; attempt++) {
     const response = await fetch(FIXTURE_IMAGE_URL, {
-      headers: { "User-Agent": "ObjectCensorTests/1.0 (browser extension test fixture)" },
+      headers: {
+        "User-Agent": "ObjectCensorTests/1.0 (browser extension test fixture)",
+      },
     });
     if (response.ok) {
       await writeFile(fixtureImage, Buffer.from(await response.arrayBuffer()));
@@ -46,7 +49,9 @@ export async function requireBuild() {
 
 export function record(results, name, ok, detail = "") {
   results.push({ name, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` – ${detail}` : ""}`);
+  console.log(
+    `${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` – ${detail}` : ""}`,
+  );
 }
 
 export function summarize(results) {

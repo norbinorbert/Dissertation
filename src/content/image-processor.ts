@@ -1,4 +1,8 @@
-import { DetectPriority, type DetectSource, type Detection } from "../shared/messages";
+import {
+  DetectPriority,
+  type DetectSource,
+  type Detection,
+} from "../shared/messages";
 import { errorMessage, log } from "../shared/log";
 import { captureSource } from "./capture";
 import { EngineClient, EngineClientError } from "./engine-client";
@@ -108,7 +112,8 @@ export class ImageProcessor {
     const record = this.records.get(image);
     if (!record) return;
     // Pages often re-assign an identical src; only blur right away when it really differs.
-    const likelySame = record.source !== null && currentSource(image) === record.source;
+    const likelySame =
+      record.source !== null && currentSource(image) === record.source;
     if (!likelySame) this.invalidate(record);
     // currentSrc (srcset/<source> selection) updates asynchronously; confirm shortly after.
     setTimeout(() => {
@@ -179,7 +184,12 @@ export class ImageProcessor {
       return;
     }
     if (!image.complete) return; // the load event will bring us back
-    if (image.naturalWidth === 0 || image.naturalHeight === 0 || isVectorSource(source) || this.shouldSkip(image)) {
+    if (
+      image.naturalWidth === 0 ||
+      image.naturalHeight === 0 ||
+      isVectorSource(source) ||
+      this.shouldSkip(image)
+    ) {
       this.finish(record, source, "skipped");
       return;
     }
@@ -190,7 +200,8 @@ export class ImageProcessor {
     const min = this.settings.settings.minMediaSize;
     return (
       isRenderedTooSmall(image, min) ||
-      (image.naturalWidth > 0 && (image.naturalWidth < min || image.naturalHeight < min))
+      (image.naturalWidth > 0 &&
+        (image.naturalWidth < min || image.naturalHeight < min))
     );
   }
 
@@ -201,7 +212,9 @@ export class ImageProcessor {
     setMediaState(image, null);
     this.overlay.remove(image);
 
-    const cached = source.startsWith("data:") ? undefined : this.cache.get(source);
+    const cached = source.startsWith("data:")
+      ? undefined
+      : this.cache.get(source);
     if (cached) {
       this.complete(record, cached.raw, cached.analysed);
       return;
@@ -209,15 +222,24 @@ export class ImageProcessor {
 
     const detectSource = this.buildSource(image, source);
     if (!detectSource) {
-      this.finish(record, source, "failed", "pixels are not readable and the URL cannot be fetched");
+      this.finish(
+        record,
+        source,
+        "failed",
+        "pixels are not readable and the URL cannot be fetched",
+      );
       return;
     }
 
     const controller = new AbortController();
     record.controller = controller;
-    const priority = isInViewport(image) ? DetectPriority.VisibleImage : DetectPriority.NearbyImage;
+    const priority = isInViewport(image)
+      ? DetectPriority.VisibleImage
+      : DetectPriority.NearbyImage;
     try {
-      const result = await this.engine.detect(detectSource, priority, { signal: controller.signal });
+      const result = await this.engine.detect(detectSource, priority, {
+        signal: controller.signal,
+      });
       if (record.controller !== controller) return;
       record.controller = null;
       if (currentSource(image) !== source) {
@@ -226,7 +248,8 @@ export class ImageProcessor {
         return;
       }
       const analysed = { width: result.width, height: result.height };
-      if (!source.startsWith("data:")) this.remember(source, result.detections, analysed);
+      if (!source.startsWith("data:"))
+        this.remember(source, result.detections, analysed);
       this.complete(record, result.detections, analysed);
     } catch (error) {
       if (record.controller !== controller) return;
@@ -235,7 +258,11 @@ export class ImageProcessor {
     }
   }
 
-  private complete(record: ImageRecord, raw: Detection[], analysed: Size): void {
+  private complete(
+    record: ImageRecord,
+    raw: Detection[],
+    analysed: Size,
+  ): void {
     record.raw = raw;
     record.analysed = analysed;
     record.status = "done";
@@ -244,9 +271,15 @@ export class ImageProcessor {
     this.apply(record);
   }
 
-  private handleFailure(record: ImageRecord, source: string, error: unknown): void {
+  private handleFailure(
+    record: ImageRecord,
+    source: string,
+    error: unknown,
+  ): void {
     const clientError =
-      error instanceof EngineClientError ? error : new EngineClientError("internal", errorMessage(error));
+      error instanceof EngineClientError
+        ? error
+        : new EngineClientError("internal", errorMessage(error));
     if (clientError.code === "aborted") {
       record.status = "idle";
       return;
@@ -269,22 +302,35 @@ export class ImageProcessor {
     this.finish(record, source, "failed", clientError.message);
   }
 
-  private finish(record: ImageRecord, source: string | null, status: "skipped" | "failed", reason?: string): void {
+  private finish(
+    record: ImageRecord,
+    source: string | null,
+    status: "skipped" | "failed",
+    reason?: string,
+  ): void {
     record.source = source;
     record.status = status;
     record.raw = null;
     record.analysed = null;
     this.overlay.remove(record.el);
     setMediaState(record.el, status);
-    if (status === "failed") log.debug("Image could not be analysed:", reason, source);
+    if (status === "failed")
+      log.debug("Image could not be analysed:", reason, source);
   }
 
   private apply(record: ImageRecord): void {
     if (!record.raw || !record.analysed) return;
     const image = record.el;
-    const boxes = toNormalizedBoxes(record.raw, record.analysed, this.settings.settings);
+    const boxes = toNormalizedBoxes(
+      record.raw,
+      record.analysed,
+      this.settings.settings,
+    );
     if (boxes.length > 0) {
-      this.overlay.setBoxes(image, boxes, { width: image.naturalWidth, height: image.naturalHeight });
+      this.overlay.setBoxes(image, boxes, {
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
       this.overlay.setVisible(image, record.near);
       setMediaState(image, "censored");
     } else {
@@ -293,10 +339,19 @@ export class ImageProcessor {
     }
   }
 
-  private buildSource(image: HTMLImageElement, source: string): DetectSource | null {
+  private buildSource(
+    image: HTMLImageElement,
+    source: string,
+  ): DetectSource | null {
     if (canReadImagePixels(image, source)) {
-      const capture = captureSource(image, image.naturalWidth, image.naturalHeight, CAPTURE_SIDE);
-      if (capture !== "tainted" && capture !== "empty") return { kind: "data", dataUrl: capture.dataUrl };
+      const capture = captureSource(
+        image,
+        image.naturalWidth,
+        image.naturalHeight,
+        CAPTURE_SIDE,
+      );
+      if (capture !== "tainted" && capture !== "empty")
+        return { kind: "data", dataUrl: capture.dataUrl };
     }
     return /^https?:/i.test(source) ? { kind: "url", url: source } : null;
   }

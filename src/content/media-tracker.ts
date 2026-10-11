@@ -77,7 +77,8 @@ export class MediaTracker {
     );
     this.resize = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (isMedia(entry.target) && this.tracked.has(entry.target)) this.delegate.onResized(entry.target);
+        if (isMedia(entry.target) && this.tracked.has(entry.target))
+          this.delegate.onResized(entry.target);
       }
     });
   }
@@ -120,8 +121,10 @@ export class MediaTracker {
       attributeFilter: SOURCE_ATTRIBUTES,
     });
     this.roots.set(root, observer);
-    for (const type of RESOURCE_EVENTS) root.addEventListener(type, this.handleResourceEvent, true);
-    for (const type of VIDEO_EVENTS) root.addEventListener(type, this.handleVideoEvent, true);
+    for (const type of RESOURCE_EVENTS)
+      root.addEventListener(type, this.handleResourceEvent, true);
+    for (const type of VIDEO_EVENTS)
+      root.addEventListener(type, this.handleVideoEvent, true);
     if (root instanceof ShadowRoot) this.delegate.onShadowRoot(root);
   }
 
@@ -130,8 +133,10 @@ export class MediaTracker {
     if (!observer) return;
     observer.disconnect();
     this.roots.delete(root);
-    for (const type of RESOURCE_EVENTS) root.removeEventListener(type, this.handleResourceEvent, true);
-    for (const type of VIDEO_EVENTS) root.removeEventListener(type, this.handleVideoEvent, true);
+    for (const type of RESOURCE_EVENTS)
+      root.removeEventListener(type, this.handleResourceEvent, true);
+    for (const type of VIDEO_EVENTS)
+      root.removeEventListener(type, this.handleVideoEvent, true);
   }
 
   // ---- discovery --------------------------------------------------------------
@@ -174,7 +179,9 @@ export class MediaTracker {
   private handleRemovedSubtree(node: Element): void {
     const candidates: MediaElement[] = [];
     if (isMedia(node)) candidates.push(node);
-    node.querySelectorAll("img, video").forEach((media) => candidates.push(media as MediaElement));
+    node
+      .querySelectorAll("img, video")
+      .forEach((media) => candidates.push(media as MediaElement));
     for (const media of candidates) {
       // Nodes that were merely moved are still connected and stay tracked.
       if (this.tracked.has(media) && !media.isConnected) this.untrack(media);
@@ -215,7 +222,8 @@ export class MediaTracker {
         if (node.nodeType === Node.ELEMENT_NODE) this.scan(node);
       });
       record.removedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) this.handleRemovedSubtree(node as Element);
+        if (node.nodeType === Node.ELEMENT_NODE)
+          this.handleRemovedSubtree(node as Element);
       });
     }
   };
@@ -227,8 +235,12 @@ export class MediaTracker {
     }
     if (target instanceof HTMLSourceElement) {
       const parent = target.parentElement;
-      const media = parent instanceof HTMLPictureElement ? parent.querySelector("img") : parent;
-      if (media && isMedia(media) && this.tracked.has(media)) this.delegate.onSourceChanged(media);
+      const media =
+        parent instanceof HTMLPictureElement
+          ? parent.querySelector("img")
+          : parent;
+      if (media && isMedia(media) && this.tracked.has(media))
+        this.delegate.onSourceChanged(media);
     }
   }
 

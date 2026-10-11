@@ -8,7 +8,8 @@ import {
   type Settings,
 } from "../shared/settings";
 
-const byId = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const byId = <T extends HTMLElement>(id: string): T =>
+  document.getElementById(id) as T;
 
 const classesGrid = byId<HTMLDivElement>("classes");
 const minScore = byId<HTMLInputElement>("min-score");
@@ -20,7 +21,9 @@ const disabledSites = byId<HTMLTextAreaElement>("disabled-sites");
 const debug = byId<HTMLInputElement>("debug");
 const toast = byId<HTMLSpanElement>("toast");
 const resetButton = byId<HTMLButtonElement>("reset");
-const policyInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="policy"]'));
+const policyInputs = Array.from(
+  document.querySelectorAll<HTMLInputElement>('input[name="policy"]'),
+);
 
 const classInputs = new Map<CensorClass, HTMLInputElement>();
 for (const name of CENSOR_CLASSES) {
@@ -41,14 +44,17 @@ function showToast(): void {
 }
 
 function render(settings: Settings): void {
-  for (const [name, input] of classInputs) input.checked = settings.classes[name];
+  for (const [name, input] of classInputs)
+    input.checked = settings.classes[name];
   minScore.value = String(Math.round(settings.minScore * 100));
   minScoreValue.textContent = `${minScore.value}%`;
   minSize.value = String(settings.minMediaSize);
   blurRadius.value = String(settings.blurRadius);
   blurRadiusValue.textContent = `${settings.blurRadius}px`;
-  for (const input of policyInputs) input.checked = input.value === settings.unprocessablePolicy;
-  if (document.activeElement !== disabledSites) disabledSites.value = settings.disabledSites.join("\n");
+  for (const input of policyInputs)
+    input.checked = input.value === settings.unprocessablePolicy;
+  if (document.activeElement !== disabledSites)
+    disabledSites.value = settings.disabledSites.join("\n");
   debug.checked = settings.debug;
 }
 
@@ -64,7 +70,10 @@ function collect(): Partial<Settings> {
     minScore: Number(minScore.value) / 100,
     minMediaSize: Number(minSize.value),
     blurRadius: Number(blurRadius.value),
-    unprocessablePolicy: policyInputs.find((input) => input.checked)?.value === "show" ? "show" : "blur",
+    unprocessablePolicy:
+      policyInputs.find((input) => input.checked)?.value === "show"
+        ? "show"
+        : "blur",
     disabledSites: sites,
     debug: debug.checked,
   };
@@ -83,7 +92,14 @@ blurRadius.addEventListener("input", () => {
   blurRadiusValue.textContent = `${blurRadius.value}px`;
 });
 
-for (const input of [minScore, minSize, blurRadius, debug, ...policyInputs, ...classInputs.values()]) {
+for (const input of [
+  minScore,
+  minSize,
+  blurRadius,
+  debug,
+  ...policyInputs,
+  ...classInputs.values(),
+]) {
   input.addEventListener("change", () => void persist());
 }
 disabledSites.addEventListener("blur", () => void persist());

@@ -65,7 +65,9 @@ class Engine {
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly canvas = document.createElement("canvas");
-  private readonly ctx = this.canvas.getContext("2d", { willReadFrequently: false })!;
+  private readonly ctx = this.canvas.getContext("2d", {
+    willReadFrequently: false,
+  })!;
 
   constructor() {
     this.scheduleIdleCheck();
@@ -100,9 +102,15 @@ class Engine {
     tf.enableProdMode();
     await this.selectBackend();
     try {
-      return await cocoSsd.load({ base: MODEL_BASE, modelUrl: BUNDLED_MODEL_URL });
+      return await cocoSsd.load({
+        base: MODEL_BASE,
+        modelUrl: BUNDLED_MODEL_URL,
+      });
     } catch (error) {
-      log.warn("Bundled model unavailable, loading from the network:", errorMessage(error));
+      log.warn(
+        "Bundled model unavailable, loading from the network:",
+        errorMessage(error),
+      );
       return cocoSsd.load({ base: MODEL_BASE });
     }
   }
@@ -131,7 +139,9 @@ class Engine {
 
   addPort(port: chrome.runtime.Port): void {
     this.ports.add(port);
-    port.onMessage.addListener((message: EngineClientMessage) => this.handleMessage(port, message));
+    port.onMessage.addListener((message: EngineClientMessage) =>
+      this.handleMessage(port, message),
+    );
     port.onDisconnect.addListener(() => {
       this.ports.delete(port);
       for (let i = this.queue.length - 1; i >= 0; i--) {
@@ -142,7 +152,10 @@ class Engine {
     void this.ensureModel().catch(() => undefined);
   }
 
-  private handleMessage(port: chrome.runtime.Port, message: EngineClientMessage): void {
+  private handleMessage(
+    port: chrome.runtime.Port,
+    message: EngineClientMessage,
+  ): void {
     if (!message || typeof message !== "object") return;
     switch (message.type) {
       case "detect":
@@ -169,7 +182,12 @@ class Engine {
   }
 
   private statusMessage(): EngineServerMessage {
-    return { type: "status", ready: this.model !== null, backend: this.backend, error: this.loadError };
+    return {
+      type: "status",
+      ready: this.model !== null,
+      backend: this.backend,
+      error: this.loadError,
+    };
   }
 
   private broadcastStatus(): void {
@@ -178,15 +196,22 @@ class Engine {
   }
 
   pong(): EnginePong {
-    return { type: "engine:pong", ready: this.model !== null, backend: this.backend, error: this.loadError };
+    return {
+      type: "engine:pong",
+      ready: this.model !== null,
+      backend: this.backend,
+      error: this.loadError,
+    };
   }
 
   // ---- scheduling --------------------------------------------------------
 
   /** Lowest priority value first, but alternate between video frames and images so neither starves. */
   private takeNextJob(): Job {
-    const isVideoJob = (job: Job) => job.request.priority === DetectPriority.VideoFrame;
-    const preferImages = this.lastJobWasVideo && this.queue.some((job) => !isVideoJob(job));
+    const isVideoJob = (job: Job) =>
+      job.request.priority === DetectPriority.VideoFrame;
+    const preferImages =
+      this.lastJobWasVideo && this.queue.some((job) => !isVideoJob(job));
     let bestIndex = -1;
     let bestPriority = Number.POSITIVE_INFINITY;
     for (let i = 0; i < this.queue.length; i++) {
@@ -222,11 +247,19 @@ class Engine {
       });
       const source = await this.decode(request);
       const started = performance.now();
-      const predictions = await this.model!.detect(source.element, MAX_DETECTIONS, MIN_SCORE_FLOOR);
+      const predictions = await this.model!.detect(
+        source.element,
+        MAX_DETECTIONS,
+        MIN_SCORE_FLOOR,
+      );
       const detections: Detection[] = [];
       for (const prediction of predictions) {
         if (!isCensorClass(prediction.class)) continue;
-        detections.push({ class: prediction.class, score: prediction.score, box: prediction.bbox });
+        detections.push({
+          class: prediction.class,
+          score: prediction.score,
+          box: prediction.bbox,
+        });
       }
       this.consecutiveFailures = 0;
       log.debug(
@@ -245,10 +278,18 @@ class Engine {
         this.consecutiveFailures++;
         log.warn(`detect #${request.id} failed:`, errorMessage(error));
         if (this.consecutiveFailures >= FATAL_FAILURE_THRESHOLD) {
-          void chrome.runtime.sendMessage<RuntimeMessage>({ type: "engine:fatal", error: errorMessage(error) });
+          void chrome.runtime.sendMessage<RuntimeMessage>({
+            type: "engine:fatal",
+            error: errorMessage(error),
+          });
         }
       }
-      this.send(port, { type: "error", id: request.id, code, error: errorMessage(error) });
+      this.send(port, {
+        type: "error",
+        id: request.id,
+        code,
+        error: errorMessage(error),
+      });
     }
   }
 
@@ -260,14 +301,25 @@ class Engine {
       const image = new Image();
       image.src = source.dataUrl;
       try {
-        await image.decode();
+        // TODO: check what timeout is reasonable
+        await Promise.race([
+          image.decode(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Decode timed out")), 100),
+          ),
+        ]);
       } catch {
+        log.warn("Data URL image failed to decode.");
         throw new DetectError("decode", "Capture could not be decoded.");
       }
       if (!image.naturalWidth || !image.naturalHeight) {
         throw new DetectError("decode", "Capture has no pixels.");
       }
-      return { element: image, width: image.naturalWidth, height: image.naturalHeight };
+      return {
+        element: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      };
     }
 
     const blob = await this.fetchImage(source.url);
@@ -279,10 +331,16 @@ class Engine {
     try {
       bitmap = await createImageBitmap(blob);
     } catch {
-      throw new DetectError("decode", `Response (${type || "unknown type"}) is not a decodable image.`);
+      throw new DetectError(
+        "decode",
+        `Response (${type || "unknown type"}) is not a decodable image.`,
+      );
     }
     try {
-      const scale = Math.min(1, MAX_ANALYSIS_SIDE / Math.max(bitmap.width, bitmap.height));
+      const scale = Math.min(
+        1,
+        MAX_ANALYSIS_SIDE / Math.max(bitmap.width, bitmap.height),
+      );
       const width = Math.max(1, Math.round(bitmap.width * scale));
       const height = Math.max(1, Math.round(bitmap.height * scale));
       this.canvas.width = width;
@@ -296,7 +354,10 @@ class Engine {
 
   private async fetchImage(url: string): Promise<Blob> {
     if (!/^https?:/i.test(url)) {
-      throw new DetectError("unsupported", "Only http(s) URLs can be fetched by the engine.");
+      throw new DetectError(
+        "unsupported",
+        "Only http(s) URLs can be fetched by the engine.",
+      );
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -306,7 +367,8 @@ class Engine {
         redirect: "follow",
         signal: controller.signal,
       });
-      if (!response.ok) throw new DetectError("fetch", `HTTP ${response.status}`);
+      if (!response.ok)
+        throw new DetectError("fetch", `HTTP ${response.status}`);
       return await response.blob();
     } catch (error) {
       if (error instanceof DetectError) throw error;
@@ -330,7 +392,9 @@ class Engine {
     this.idleTimer = setTimeout(() => {
       if (this.queue.length === 0 && !this.draining) {
         log.debug("Idle; asking the background worker to close the engine.");
-        void chrome.runtime.sendMessage<RuntimeMessage>({ type: "engine:idle" });
+        void chrome.runtime.sendMessage<RuntimeMessage>({
+          type: "engine:idle",
+        });
       }
     }, IDLE_TIMEOUT_MS);
   }
@@ -342,16 +406,23 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name === ENGINE_PORT_NAME) engine.addPort(port);
 });
 
-chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
-  if (sender.id !== chrome.runtime.id || !message || typeof message !== "object") return false;
-  switch (message.type) {
-    case "engine:ping":
-      sendResponse(engine.pong());
+chrome.runtime.onMessage.addListener(
+  (message: RuntimeMessage, sender, sendResponse) => {
+    if (
+      sender.id !== chrome.runtime.id ||
+      !message ||
+      typeof message !== "object"
+    )
       return false;
-    case "engine:configure":
-      setDebugLogging(message.debug);
-      return false;
-    default:
-      return false;
-  }
-});
+    switch (message.type) {
+      case "engine:ping":
+        sendResponse(engine.pong());
+        return false;
+      case "engine:configure":
+        setDebugLogging(message.debug);
+        return false;
+      default:
+        return false;
+    }
+  },
+);

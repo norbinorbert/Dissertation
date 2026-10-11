@@ -5,7 +5,12 @@ import {
   type EngineStatusResponse,
   type RuntimeMessage,
 } from "./shared/messages";
-import { loadSettings, onSettingsChanged, saveSettings, type Settings } from "./shared/settings";
+import {
+  loadSettings,
+  onSettingsChanged,
+  saveSettings,
+  type Settings,
+} from "./shared/settings";
 import { errorMessage, log, setDebugLogging } from "./shared/log";
 
 const ENGINE_URL = chrome.runtime.getURL(ENGINE_DOCUMENT_PATH);
@@ -32,7 +37,10 @@ async function hasEngineDocument(): Promise<boolean> {
 
 async function pingEngine(): Promise<EnginePong | null> {
   try {
-    const response = await chrome.runtime.sendMessage<RuntimeMessage, EnginePong | undefined>({
+    const response = await chrome.runtime.sendMessage<
+      RuntimeMessage,
+      EnginePong | undefined
+    >({
       type: "engine:ping",
     });
     return response && response.type === "engine:pong" ? response : null;
@@ -55,7 +63,10 @@ let debugLogging = false;
 
 async function configureEngine(): Promise<void> {
   try {
-    await chrome.runtime.sendMessage<RuntimeMessage>({ type: "engine:configure", debug: debugLogging });
+    await chrome.runtime.sendMessage<RuntimeMessage>({
+      type: "engine:configure",
+      debug: debugLogging,
+    });
   } catch {
     // No engine document is listening; it will be configured when it starts.
   }
@@ -114,8 +125,17 @@ function isFromEngine(sender: chrome.runtime.MessageSender): boolean {
 }
 
 chrome.runtime.onMessage.addListener(
-  (message: RuntimeMessage, sender, sendResponse: (response: unknown) => void) => {
-    if (sender.id !== chrome.runtime.id || !message || typeof message !== "object") return false;
+  (
+    message: RuntimeMessage,
+    sender,
+    sendResponse: (response: unknown) => void,
+  ) => {
+    if (
+      sender.id !== chrome.runtime.id ||
+      !message ||
+      typeof message !== "object"
+    )
+      return false;
 
     switch (message.type) {
       case "engine:ensure":
@@ -123,14 +143,22 @@ chrome.runtime.onMessage.addListener(
           () => sendResponse({ ok: true } satisfies EngineEnsureResponse),
           (error) => {
             log.warn("Engine start failed:", errorMessage(error));
-            sendResponse({ ok: false, error: errorMessage(error) } satisfies EngineEnsureResponse);
+            sendResponse({
+              ok: false,
+              error: errorMessage(error),
+            } satisfies EngineEnsureResponse);
           },
         );
         return true;
 
       case "engine:status":
         getEngineStatus().then(sendResponse, (error) =>
-          sendResponse({ running: false, ready: false, backend: null, error: errorMessage(error) }),
+          sendResponse({
+            running: false,
+            ready: false,
+            backend: null,
+            error: errorMessage(error),
+          }),
         );
         return true;
 
@@ -167,8 +195,12 @@ function applySettings(settings: Settings): void {
 
 chrome.runtime.onInstalled.addListener(() => {
   // Persist normalised defaults so the options page shows the effective configuration.
-  saveSettings({}).then(applySettings).catch((error) => log.warn(errorMessage(error)));
+  saveSettings({})
+    .then(applySettings)
+    .catch((error) => log.warn(errorMessage(error)));
 });
 
-loadSettings().then(applySettings).catch((error) => log.warn(errorMessage(error)));
+loadSettings()
+  .then(applySettings)
+  .catch((error) => log.warn(errorMessage(error)));
 onSettingsChanged(applySettings);

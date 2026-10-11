@@ -64,7 +64,8 @@
           const id = nextId++;
           return new Promise((resolve) => {
             waiting.set(id, resolve);
-            for (const fn of engineHandlers) fn({ type: "detect", id, source, priority });
+            for (const fn of engineHandlers)
+              fn({ type: "detect", id, source, priority });
           });
         },
         disconnect: () => port.disconnect(),

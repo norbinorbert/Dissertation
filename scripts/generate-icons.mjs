@@ -8,7 +8,12 @@ import { fileURLToPath } from "node:url";
 
 const SIZES = [16, 32, 48, 128];
 const SUPERSAMPLE = 4;
-const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "icons");
+const outDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "public",
+  "icons",
+);
 
 const crcTable = new Uint32Array(256).map((_, n) => {
   let c = n;
@@ -59,7 +64,8 @@ function layers() {
     return (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
   };
   const inDisc = (x, y) => (x - 0.5) ** 2 + (y - 0.5) ** 2 <= 0.31 ** 2;
-  const inBar = (x, y) => Math.abs(y - 0.5) <= 0.09 && Math.abs(x - 0.5) <= 0.36;
+  const inBar = (x, y) =>
+    Math.abs(y - 0.5) <= 0.09 && Math.abs(x - 0.5) <= 0.36;
   return [
     { color: [31, 41, 55], hit: inRoundedTile },
     { color: [229, 231, 235], hit: inDisc },
@@ -73,7 +79,10 @@ function render(size) {
   const samples = SUPERSAMPLE * SUPERSAMPLE;
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
-      let r = 0, g = 0, b = 0, a = 0;
+      let r = 0,
+        g = 0,
+        b = 0,
+        a = 0;
       for (let sy = 0; sy < SUPERSAMPLE; sy++) {
         for (let sx = 0; sx < SUPERSAMPLE; sx++) {
           const x = (px + (sx + 0.5) / SUPERSAMPLE) / size;
@@ -104,4 +113,6 @@ await mkdir(outDir, { recursive: true });
 for (const size of SIZES) {
   await writeFile(path.join(outDir, `icon-${size}.png`), render(size));
 }
-console.log(`[icons] Wrote ${SIZES.map((s) => `icon-${s}.png`).join(", ")} to ${outDir}`);
+console.log(
+  `[icons] Wrote ${SIZES.map((s) => `icon-${s}.png`).join(", ")} to ${outDir}`,
+);

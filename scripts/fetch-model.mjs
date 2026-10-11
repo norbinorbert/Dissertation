@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 
 const MODEL_BASE_URL =
   "https://storage.googleapis.com/tfjs-models/savedmodel/ssdlite_mobilenet_v2/";
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const modelDir = path.join(rootDir, "public", "model");
 const manifestPath = path.join(modelDir, "model.json");
 
@@ -44,12 +47,16 @@ async function main() {
       if (!(await exists(path.join(modelDir, shard)))) missing.push(shard);
     }
     if (missing.length === 0) {
-      console.log(`[fetch-model] Model already present in ${path.relative(rootDir, modelDir)}`);
+      console.log(
+        `[fetch-model] Model already present in ${path.relative(rootDir, modelDir)}`,
+      );
       return;
     }
   }
 
-  console.log(`[fetch-model] Downloading model manifest from ${MODEL_BASE_URL}`);
+  console.log(
+    `[fetch-model] Downloading model manifest from ${MODEL_BASE_URL}`,
+  );
   const manifestBuffer = await download("model.json");
   manifest = JSON.parse(manifestBuffer.toString("utf8"));
   await writeFile(manifestPath, manifestBuffer);
@@ -58,10 +65,14 @@ async function main() {
   for (const [index, shard] of shards.entries()) {
     const target = path.join(modelDir, shard);
     if (await exists(target)) continue;
-    console.log(`[fetch-model] Downloading ${shard} (${index + 1}/${shards.length})`);
+    console.log(
+      `[fetch-model] Downloading ${shard} (${index + 1}/${shards.length})`,
+    );
     await writeFile(target, await download(shard));
   }
-  console.log(`[fetch-model] Done. Model stored in ${path.relative(rootDir, modelDir)}`);
+  console.log(
+    `[fetch-model] Done. Model stored in ${path.relative(rootDir, modelDir)}`,
+  );
 }
 
 main().catch((error) => {

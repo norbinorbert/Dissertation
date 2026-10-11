@@ -12,9 +12,13 @@ export type MediaState = "clean" | "censored" | "skipped" | "failed";
 
 export const STATE_ATTRIBUTE = "data-oc-state";
 
-export function setMediaState(element: Element, state: MediaState | null): void {
+export function setMediaState(
+  element: Element,
+  state: MediaState | null,
+): void {
   if (state === null) {
-    if (element.hasAttribute(STATE_ATTRIBUTE)) element.removeAttribute(STATE_ATTRIBUTE);
+    if (element.hasAttribute(STATE_ATTRIBUTE))
+      element.removeAttribute(STATE_ATTRIBUTE);
   } else if (element.getAttribute(STATE_ATTRIBUTE) !== state) {
     element.setAttribute(STATE_ATTRIBUTE, state);
   }
@@ -42,11 +46,19 @@ export function isRenderedTooSmall(element: Element, minSize: number): boolean {
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 /** Applies the user's class/score filters and converts pixel boxes into normalized ones. */
-export function toNormalizedBoxes(detections: Detection[], analysed: Size, settings: Settings): NormalizedBox[] {
+export function toNormalizedBoxes(
+  detections: Detection[],
+  analysed: Size,
+  settings: Settings,
+): NormalizedBox[] {
   if (!analysed.width || !analysed.height) return [];
   const boxes: NormalizedBox[] = [];
   for (const detection of detections) {
-    if (!settings.classes[detection.class] || detection.score < settings.minScore) continue;
+    if (
+      !settings.classes[detection.class] ||
+      detection.score < settings.minScore
+    )
+      continue;
     const [x, y, width, height] = detection.box;
     const left = clamp01(x / analysed.width);
     const top = clamp01(y / analysed.height);
@@ -70,7 +82,10 @@ export function isVectorSource(source: string): boolean {
 }
 
 /** Whether a canvas in this page may read the pixels of `image` loaded from `source`. */
-export function canReadImagePixels(image: HTMLImageElement, source: string): boolean {
+export function canReadImagePixels(
+  image: HTMLImageElement,
+  source: string,
+): boolean {
   if (source.startsWith("data:") || source.startsWith("blob:")) return true;
   try {
     if (new URL(source, location.href).origin === location.origin) return true;

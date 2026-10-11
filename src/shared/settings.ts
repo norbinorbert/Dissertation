@@ -30,10 +30,9 @@ export const MIN_SCORE_CEILING = 0.95;
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   disabledSites: [],
-  classes: Object.fromEntries(CENSOR_CLASSES.map((name) => [name, true])) as Record<
-    CensorClass,
-    boolean
-  >,
+  classes: Object.fromEntries(
+    CENSOR_CLASSES.map((name) => [name, true]),
+  ) as Record<CensorClass, boolean>,
   minScore: 0.5,
   blurRadius: 20,
   unprocessablePolicy: "blur",
@@ -57,7 +56,9 @@ export function normalizeHostname(input: string): string | null {
   const trimmed = input.trim().toLowerCase();
   if (!trimmed) return null;
   try {
-    const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+    const url = new URL(
+      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
+    );
     return url.hostname || null;
   } catch {
     return null;
@@ -66,14 +67,16 @@ export function normalizeHostname(input: string): string | null {
 
 /** Fills gaps and repairs invalid values so callers can rely on every field. */
 export function normalizeSettings(raw: unknown): Settings {
-  const input = (raw && typeof raw === "object" ? raw : {}) as Partial<Record<keyof Settings, unknown>>;
-  const rawClasses = (input.classes && typeof input.classes === "object" ? input.classes : {}) as Record<
-    string,
-    unknown
+  const input = (raw && typeof raw === "object" ? raw : {}) as Partial<
+    Record<keyof Settings, unknown>
   >;
+  const rawClasses = (
+    input.classes && typeof input.classes === "object" ? input.classes : {}
+  ) as Record<string, unknown>;
   const classes = { ...DEFAULT_SETTINGS.classes };
   for (const name of CENSOR_CLASSES) {
-    if (typeof rawClasses[name] === "boolean") classes[name] = rawClasses[name] as boolean;
+    if (typeof rawClasses[name] === "boolean")
+      classes[name] = rawClasses[name] as boolean;
   }
   const disabledSites = Array.isArray(input.disabledSites)
     ? Array.from(
@@ -87,20 +90,37 @@ export function normalizeSettings(raw: unknown): Settings {
     : [];
 
   return {
-    enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.enabled,
+    enabled:
+      typeof input.enabled === "boolean"
+        ? input.enabled
+        : DEFAULT_SETTINGS.enabled,
     disabledSites,
     classes,
-    minScore: clamp(asNumber(input.minScore, DEFAULT_SETTINGS.minScore), MIN_SCORE_FLOOR, MIN_SCORE_CEILING),
-    blurRadius: clamp(Math.round(asNumber(input.blurRadius, DEFAULT_SETTINGS.blurRadius)), 4, 80),
+    minScore: clamp(
+      asNumber(input.minScore, DEFAULT_SETTINGS.minScore),
+      MIN_SCORE_FLOOR,
+      MIN_SCORE_CEILING,
+    ),
+    blurRadius: clamp(
+      Math.round(asNumber(input.blurRadius, DEFAULT_SETTINGS.blurRadius)),
+      4,
+      80,
+    ),
     unprocessablePolicy: input.unprocessablePolicy === "show" ? "show" : "blur",
-    minMediaSize: clamp(Math.round(asNumber(input.minMediaSize, DEFAULT_SETTINGS.minMediaSize)), 8, 512),
+    minMediaSize: clamp(
+      Math.round(asNumber(input.minMediaSize, DEFAULT_SETTINGS.minMediaSize)),
+      8,
+      512,
+    ),
     debug: input.debug === true,
   };
 }
 
 export function isSiteDisabled(settings: Settings, hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return settings.disabledSites.some((site) => host === site || host.endsWith(`.${site}`));
+  return settings.disabledSites.some(
+    (site) => host === site || host.endsWith(`.${site}`),
+  );
 }
 
 export function isActiveForHost(settings: Settings, hostname: string): boolean {
@@ -112,7 +132,9 @@ export async function loadSettings(): Promise<Settings> {
   return normalizeSettings(stored[SETTINGS_STORAGE_KEY]);
 }
 
-export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
+export async function saveSettings(
+  patch: Partial<Settings>,
+): Promise<Settings> {
   const current = await loadSettings();
   const next = normalizeSettings({ ...current, ...patch });
   await chrome.storage.sync.set({ [SETTINGS_STORAGE_KEY]: next });
@@ -120,8 +142,13 @@ export async function saveSettings(patch: Partial<Settings>): Promise<Settings> 
 }
 
 /** Subscribes to settings updates. Returns an unsubscribe function. */
-export function onSettingsChanged(listener: (settings: Settings) => void): () => void {
-  const handler = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+export function onSettingsChanged(
+  listener: (settings: Settings) => void,
+): () => void {
+  const handler = (
+    changes: Record<string, chrome.storage.StorageChange>,
+    area: string,
+  ) => {
     if (area !== "sync" || !(SETTINGS_STORAGE_KEY in changes)) return;
     listener(normalizeSettings(changes[SETTINGS_STORAGE_KEY].newValue));
   };

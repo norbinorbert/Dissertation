@@ -1,9 +1,23 @@
-import { DetectPriority, type DetectSource, type Detection } from "../shared/messages";
+import {
+  DetectPriority,
+  type DetectSource,
+  type Detection,
+} from "../shared/messages";
 import { errorMessage, log } from "../shared/log";
 import { captureSource, loadImage } from "./capture";
-import { EngineClient, EngineClientError, type DetectResult } from "./engine-client";
+import {
+  EngineClient,
+  EngineClientError,
+  type DetectResult,
+} from "./engine-client";
 import type { NormalizedBox, Size } from "./geometry";
-import { isInViewport, isRenderedTooSmall, isVectorSource, setMediaState, toNormalizedBoxes } from "./media-state";
+import {
+  isInViewport,
+  isRenderedTooSmall,
+  isVectorSource,
+  setMediaState,
+  toNormalizedBoxes,
+} from "./media-state";
 import type { Overlay } from "./overlay";
 import type { SettingsStore } from "./settings-store";
 
@@ -55,7 +69,11 @@ type VideoWithFrameCallback = HTMLVideoElement & {
 };
 
 function isPlaying(video: HTMLVideoElement): boolean {
-  return !video.paused && !video.ended && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+  return (
+    !video.paused &&
+    !video.ended &&
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+  );
 }
 
 export class VideoProcessor {
@@ -73,7 +91,8 @@ export class VideoProcessor {
       el: video,
       near: false,
       mode: "idle",
-      hasPresentedFrame: video.currentTime > 0 || !video.paused || video.played.length > 0,
+      hasPresentedFrame:
+        video.currentTime > 0 || !video.paused || video.played.length > 0,
       posterSource: null,
       posterResult: null,
       posterController: null,
@@ -116,7 +135,11 @@ export class VideoProcessor {
     this.overlay.setVisible(video, near);
     if (near) {
       // Whatever was detected while off-screen no longer describes the current frame.
-      if (record.mode === "frames" && isPlaying(video) && performance.now() - record.lastResultAt > STALE_MS) {
+      if (
+        record.mode === "frames" &&
+        isPlaying(video) &&
+        performance.now() - record.lastResultAt > STALE_MS
+      ) {
         this.markStale(record);
       }
       this.evaluate(record);
@@ -132,7 +155,8 @@ export class VideoProcessor {
     // events; only the poster needs attribute-level handling.
     setTimeout(() => {
       if (!this.records.has(video) || record.reloading) return;
-      if (record.mode === "poster" && video.poster !== record.posterSource) this.reset(record);
+      if (record.mode === "poster" && video.poster !== record.posterSource)
+        this.reset(record);
       this.evaluate(record);
     }, 0);
   }
@@ -174,13 +198,17 @@ export class VideoProcessor {
       case "loadedmetadata":
       case "resize":
         if (video.videoWidth && video.videoHeight && record.mode === "frames") {
-          this.overlay.setIntrinsic(video, { width: video.videoWidth, height: video.videoHeight });
+          this.overlay.setIntrinsic(video, {
+            width: video.videoWidth,
+            height: video.videoHeight,
+          });
         }
         this.evaluate(record);
         break;
       case "playing":
       case "timeupdate":
-        if (video.currentTime > 0 || !video.paused) record.hasPresentedFrame = true;
+        if (video.currentTime > 0 || !video.paused)
+          record.hasPresentedFrame = true;
         this.evaluate(record);
         break;
       case "seeking":
@@ -204,7 +232,13 @@ export class VideoProcessor {
 
   private evaluate(record: VideoRecord): void {
     const video = record.el;
-    if (!record.near || !video.isConnected || record.reloading || record.retryTimer !== null) return;
+    if (
+      !record.near ||
+      !video.isConnected ||
+      record.reloading ||
+      record.retryTimer !== null
+    )
+      return;
     if (record.mode === "failed") return;
 
     if (video.mediaKeys) {
@@ -238,7 +272,12 @@ export class VideoProcessor {
 
   private isShowingPoster(record: VideoRecord): boolean {
     const video = record.el;
-    return Boolean(video.poster) && !record.hasPresentedFrame && video.paused && video.currentTime === 0;
+    return (
+      Boolean(video.poster) &&
+      !record.hasPresentedFrame &&
+      video.paused &&
+      video.currentTime === 0
+    );
   }
 
   private enterFramesMode(record: VideoRecord): void {
@@ -262,7 +301,9 @@ export class VideoProcessor {
     const video = record.el as VideoWithFrameCallback;
     if (typeof video.requestVideoFrameCallback === "function") {
       record.loopIsVideoCallback = true;
-      record.loopHandle = video.requestVideoFrameCallback(() => this.step(record));
+      record.loopHandle = video.requestVideoFrameCallback(() =>
+        this.step(record),
+      );
     } else {
       record.loopIsVideoCallback = false;
       record.loopHandle = requestAnimationFrame(() => this.step(record));
@@ -272,15 +313,25 @@ export class VideoProcessor {
   private step(record: VideoRecord): void {
     record.loopHandle = null;
     const video = record.el;
-    if (!record.near || !video.isConnected || record.mode !== "frames" || !isPlaying(video)) return;
-    if (!record.inFlight && record.retryTimer === null) void this.detectFrame(record);
+    if (
+      !record.near ||
+      !video.isConnected ||
+      record.mode !== "frames" ||
+      !isPlaying(video)
+    )
+      return;
+    if (!record.inFlight && record.retryTimer === null)
+      void this.detectFrame(record);
     this.scheduleStep(record);
   }
 
   private stopLoop(record: VideoRecord): void {
     if (record.loopHandle === null) return;
     const video = record.el as VideoWithFrameCallback;
-    if (record.loopIsVideoCallback && typeof video.cancelVideoFrameCallback === "function") {
+    if (
+      record.loopIsVideoCallback &&
+      typeof video.cancelVideoFrameCallback === "function"
+    ) {
       video.cancelVideoFrameCallback(record.loopHandle);
     } else {
       cancelAnimationFrame(record.loopHandle);
@@ -295,7 +346,12 @@ export class VideoProcessor {
 
   private async detectFrame(record: VideoRecord): Promise<void> {
     const video = record.el;
-    const capture = captureSource(video, video.videoWidth, video.videoHeight, FRAME_CAPTURE_SIDE);
+    const capture = captureSource(
+      video,
+      video.videoWidth,
+      video.videoHeight,
+      FRAME_CAPTURE_SIDE,
+    );
     if (capture === "empty") return;
     if (capture === "tainted") {
       this.handleTaintedVideo(record);
@@ -306,10 +362,14 @@ export class VideoProcessor {
     record.frameController = controller;
     record.inFlight = true;
     try {
-      const result = await this.engine.detect({ kind: "data", dataUrl: capture.dataUrl }, DetectPriority.VideoFrame, {
-        signal: controller.signal,
-        timeoutMs: FRAME_TIMEOUT_MS,
-      });
+      const result = await this.engine.detect(
+        { kind: "data", dataUrl: capture.dataUrl },
+        DetectPriority.VideoFrame,
+        {
+          signal: controller.signal,
+          timeoutMs: FRAME_TIMEOUT_MS,
+        },
+      );
       if (record.frameController !== controller) return;
       record.transientFailures = 0;
       this.pushFrameResult(record, result);
@@ -322,7 +382,8 @@ export class VideoProcessor {
         record.inFlight = false;
         if (record.stillPending) {
           record.stillPending = false;
-          if (record.mode === "frames" && !isPlaying(video)) void this.detectFrame(record);
+          if (record.mode === "frames" && !isPlaying(video))
+            void this.detectFrame(record);
         }
       }
     }
@@ -330,7 +391,11 @@ export class VideoProcessor {
 
   private pushFrameResult(record: VideoRecord, result: DetectResult): void {
     const now = performance.now();
-    record.results.push({ at: now, raw: result.detections, analysed: { width: result.width, height: result.height } });
+    record.results.push({
+      at: now,
+      raw: result.detections,
+      analysed: { width: result.width, height: result.height },
+    });
     record.lastResultAt = now;
     this.applyFrames(record);
     this.armStaleTimer(record);
@@ -341,25 +406,40 @@ export class VideoProcessor {
     const now = performance.now();
     const latest = record.results[record.results.length - 1];
     // Keep the newest result even when old: a paused frame does not change.
-    record.results = record.results.filter((result) => result === latest || now - result.at <= RESULT_HOLD_MS);
+    record.results = record.results.filter(
+      (result) => result === latest || now - result.at <= RESULT_HOLD_MS,
+    );
     const boxes: NormalizedBox[] = [];
     for (const result of record.results) {
-      boxes.push(...toNormalizedBoxes(result.raw, result.analysed, this.settings.settings));
+      boxes.push(
+        ...toNormalizedBoxes(
+          result.raw,
+          result.analysed,
+          this.settings.settings,
+        ),
+      );
     }
     this.showBoxes(record, boxes, this.intrinsicSize(record), MOTION_PAD_RATIO);
   }
 
   private handleFrameFailure(record: VideoRecord, error: unknown): void {
     const clientError =
-      error instanceof EngineClientError ? error : new EngineClientError("internal", errorMessage(error));
+      error instanceof EngineClientError
+        ? error
+        : new EngineClientError("internal", errorMessage(error));
     if (clientError.code === "aborted") return;
     if (!clientError.transient) {
       this.fail(record, clientError.message);
       return;
     }
     record.transientFailures++;
-    const delay = Math.min(MAX_TRANSIENT_BACKOFF_MS, 500 * 2 ** (record.transientFailures - 1));
-    log.debug(`Video frame analysis failed (${clientError.code}); retrying in ${delay}ms`);
+    const delay = Math.min(
+      MAX_TRANSIENT_BACKOFF_MS,
+      500 * 2 ** (record.transientFailures - 1),
+    );
+    log.debug(
+      `Video frame analysis failed (${clientError.code}); retrying in ${delay}ms`,
+    );
     record.retryTimer = setTimeout(() => {
       record.retryTimer = null;
       this.evaluate(record);
@@ -370,7 +450,11 @@ export class VideoProcessor {
     if (record.staleTimer !== null) clearTimeout(record.staleTimer);
     record.staleTimer = setTimeout(() => {
       record.staleTimer = null;
-      if (record.mode === "frames" && isPlaying(record.el) && performance.now() - record.lastResultAt >= STALE_MS) {
+      if (
+        record.mode === "frames" &&
+        isPlaying(record.el) &&
+        performance.now() - record.lastResultAt >= STALE_MS
+      ) {
         this.markStale(record);
       }
     }, STALE_MS + 50);
@@ -388,7 +472,11 @@ export class VideoProcessor {
   private async processPoster(record: VideoRecord): Promise<void> {
     const video = record.el;
     const poster = video.poster;
-    if (record.mode === "poster" && record.posterSource === poster && (record.posterResult || record.posterController)) {
+    if (
+      record.mode === "poster" &&
+      record.posterSource === poster &&
+      (record.posterResult || record.posterController)
+    ) {
       return;
     }
     this.stopLoop(record);
@@ -411,8 +499,12 @@ export class VideoProcessor {
     try {
       const source = await this.posterSource(poster);
       if (record.posterController !== controller) return;
-      const priority = isInViewport(video) ? DetectPriority.VisibleImage : DetectPriority.NearbyImage;
-      const result = await this.engine.detect(source, priority, { signal: controller.signal });
+      const priority = isInViewport(video)
+        ? DetectPriority.VisibleImage
+        : DetectPriority.NearbyImage;
+      const result = await this.engine.detect(source, priority, {
+        signal: controller.signal,
+      });
       if (record.posterController !== controller) return;
       record.posterResult = {
         at: performance.now(),
@@ -423,23 +515,32 @@ export class VideoProcessor {
     } catch (error) {
       if (record.posterController !== controller) return;
       const clientError =
-        error instanceof EngineClientError ? error : new EngineClientError("internal", errorMessage(error));
+        error instanceof EngineClientError
+          ? error
+          : new EngineClientError("internal", errorMessage(error));
       if (clientError.code === "aborted") return;
       if (clientError.code === "unsupported") {
         setMediaState(video, "clean");
       } else if (clientError.transient) {
         record.transientFailures++;
-        const delay = Math.min(MAX_TRANSIENT_BACKOFF_MS, 500 * 2 ** (record.transientFailures - 1));
+        const delay = Math.min(
+          MAX_TRANSIENT_BACKOFF_MS,
+          500 * 2 ** (record.transientFailures - 1),
+        );
         record.retryTimer = setTimeout(() => {
           record.retryTimer = null;
           record.mode = "idle";
           this.evaluate(record);
         }, delay);
       } else {
-        this.fail(record, `poster could not be analysed: ${clientError.message}`);
+        this.fail(
+          record,
+          `poster could not be analysed: ${clientError.message}`,
+        );
       }
     } finally {
-      if (record.posterController === controller) record.posterController = null;
+      if (record.posterController === controller)
+        record.posterController = null;
     }
   }
 
@@ -447,20 +548,35 @@ export class VideoProcessor {
     if (/^https?:/i.test(poster)) return { kind: "url", url: poster };
     // data:/blob: posters can only be read from inside the page.
     const image = await loadImage(poster);
-    const capture = captureSource(image, image.naturalWidth, image.naturalHeight, 480);
-    if (capture === "tainted" || capture === "empty") throw new EngineClientError("decode", "Poster is not readable.");
+    const capture = captureSource(
+      image,
+      image.naturalWidth,
+      image.naturalHeight,
+      480,
+    );
+    if (capture === "tainted" || capture === "empty")
+      throw new EngineClientError("decode", "Poster is not readable.");
     return { kind: "data", dataUrl: capture.dataUrl };
   }
 
   private applyPoster(record: VideoRecord): void {
     if (record.mode !== "poster" || !record.posterResult) return;
-    const boxes = toNormalizedBoxes(record.posterResult.raw, record.posterResult.analysed, this.settings.settings);
+    const boxes = toNormalizedBoxes(
+      record.posterResult.raw,
+      record.posterResult.analysed,
+      this.settings.settings,
+    );
     this.showBoxes(record, boxes, record.posterResult.analysed, 0);
   }
 
   // ---- shared helpers --------------------------------------------------------------------
 
-  private showBoxes(record: VideoRecord, boxes: NormalizedBox[], intrinsic: Size, extraPad: number): void {
+  private showBoxes(
+    record: VideoRecord,
+    boxes: NormalizedBox[],
+    intrinsic: Size,
+    extraPad: number,
+  ): void {
     const video = record.el;
     if (boxes.length > 0) {
       this.overlay.setBoxes(video, boxes, intrinsic, extraPad);
@@ -474,7 +590,8 @@ export class VideoProcessor {
 
   private intrinsicSize(record: VideoRecord): Size {
     const video = record.el;
-    if (video.videoWidth && video.videoHeight) return { width: video.videoWidth, height: video.videoHeight };
+    if (video.videoWidth && video.videoHeight)
+      return { width: video.videoWidth, height: video.videoHeight };
     const latest = record.results[record.results.length - 1];
     return latest ? latest.analysed : { width: 0, height: 0 };
   }
@@ -482,7 +599,10 @@ export class VideoProcessor {
   private handleTaintedVideo(record: VideoRecord): void {
     const video = record.el;
     if (record.corsRetried || !this.canReloadWithCors(video)) {
-      this.fail(record, "cross-origin video without CORS headers; frames are not readable");
+      this.fail(
+        record,
+        "cross-origin video without CORS headers; frames are not readable",
+      );
       return;
     }
     record.corsRetried = true;
@@ -514,7 +634,10 @@ export class VideoProcessor {
     };
     video.addEventListener("loadedmetadata", onLoaded, { once: true });
     video.addEventListener("error", onError, { once: true });
-    log.debug("Reloading video with crossorigin=anonymous to allow frame capture", video.currentSrc);
+    log.debug(
+      "Reloading video with crossorigin=anonymous to allow frame capture",
+      video.currentSrc,
+    );
     video.crossOrigin = "anonymous";
     video.load();
   }

@@ -18,10 +18,16 @@ const ENCODE_QUALITY = 0.8;
 let scratch: HTMLCanvasElement | null = null;
 let scratchCtx: CanvasRenderingContext2D | null = null;
 
-function getScratch(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+function getScratch(): {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+} {
   if (!scratch || !scratchCtx) {
     scratch = document.createElement("canvas");
-    scratchCtx = scratch.getContext("2d", { alpha: false, willReadFrequently: false });
+    scratchCtx = scratch.getContext("2d", {
+      alpha: false,
+      willReadFrequently: false,
+    });
     if (!scratchCtx) throw new Error("2D canvas context unavailable");
   }
   return { canvas: scratch, ctx: scratchCtx };
@@ -32,7 +38,11 @@ function discardScratch(): void {
   scratchCtx = null;
 }
 
-export function scaledSize(width: number, height: number, maxSide: number): { width: number; height: number } {
+export function scaledSize(
+  width: number,
+  height: number,
+  maxSide: number,
+): { width: number; height: number } {
   const scale = Math.min(1, maxSide / Math.max(width, height));
   return {
     width: Math.max(1, Math.round(width * scale)),
@@ -61,7 +71,8 @@ export function captureSource(
     return { dataUrl, width, height };
   } catch (error) {
     discardScratch();
-    if (error instanceof DOMException && error.name === "SecurityError") return "tainted";
+    if (error instanceof DOMException && error.name === "SecurityError")
+      return "tainted";
     throw error;
   }
 }
@@ -71,7 +82,8 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Could not load ${url.slice(0, 80)}`));
+    image.onerror = () =>
+      reject(new Error(`Could not load ${url.slice(0, 80)}`));
     image.src = url;
   });
 }

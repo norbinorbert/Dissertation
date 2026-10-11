@@ -83,7 +83,11 @@ function computeClipChain(element: Element): Element[] {
   let node = parentOf(element);
   while (node && node !== document.documentElement && node !== document.body) {
     const cs = getComputedStyle(node);
-    if (cs.overflowX !== "visible" || cs.overflowY !== "visible" || cs.clipPath !== "none") {
+    if (
+      cs.overflowX !== "visible" ||
+      cs.overflowY !== "visible" ||
+      cs.clipPath !== "none"
+    ) {
       chain.push(node);
     }
     node = parentOf(node);
@@ -121,7 +125,12 @@ export class Overlay {
   private frame: number | null = null;
 
   /** Shows `boxes` over `element`; an empty list removes the group. */
-  setBoxes(element: Element, boxes: NormalizedBox[], intrinsic: Size, extraPadRatio = 0): void {
+  setBoxes(
+    element: Element,
+    boxes: NormalizedBox[],
+    intrinsic: Size,
+    extraPadRatio = 0,
+  ): void {
     if (boxes.length === 0) {
       this.remove(element);
       return;
@@ -287,7 +296,10 @@ export class Overlay {
     let clip: Rect | null = intersectRects(borderBox, viewport);
     for (const ancestor of group.clipChain) {
       if (!clip) break;
-      clip = intersectRects(clip, rectFromDom(ancestor.getBoundingClientRect()));
+      clip = intersectRects(
+        clip,
+        rectFromDom(ancestor.getBoundingClientRect()),
+      );
     }
     if (!clip) {
       this.hide(group);
@@ -296,8 +308,14 @@ export class Overlay {
 
     const painted = paintedRect(borderBox, group.style, group.intrinsic);
     const key = [
-      clip.left, clip.top, clip.width, clip.height,
-      painted.left, painted.top, painted.width, painted.height,
+      clip.left,
+      clip.top,
+      clip.width,
+      clip.height,
+      painted.left,
+      painted.top,
+      painted.width,
+      painted.height,
     ]
       .map((value) => Math.round(value * 2) / 2)
       .join(",");
@@ -317,7 +335,10 @@ export class Overlay {
       const box = group.boxes[i];
       const width = box.width * painted.width;
       const height = box.height * painted.height;
-      const pad = Math.max(MIN_PAD_PX, (PAD_RATIO + group.extraPadRatio) * Math.max(width, height));
+      const pad = Math.max(
+        MIN_PAD_PX,
+        (PAD_RATIO + group.extraPadRatio) * Math.max(width, height),
+      );
       setRect(group.boxElements[i], {
         left: box.x * painted.width - pad,
         top: box.y * painted.height - pad,

@@ -33,7 +33,12 @@
 
 body {
   margin: 0;
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font:
+    14px/1.45 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   color: var(--fg);
   background: var(--bg);
 }
@@ -285,7 +290,11 @@ section.card {
 textarea {
   width: 100%;
   min-height: 110px;
-  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    13px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);

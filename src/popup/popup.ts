@@ -14,13 +14,18 @@ const siteInput = document.getElementById("site-enabled") as HTMLInputElement;
 const siteHost = document.getElementById("site-host") as HTMLElement;
 const engineStatus = document.getElementById("engine-status") as HTMLElement;
 const classesLabel = document.getElementById("classes") as HTMLElement;
-const optionsButton = document.getElementById("open-options") as HTMLButtonElement;
+const optionsButton = document.getElementById(
+  "open-options",
+) as HTMLButtonElement;
 
 let currentHost: string | null = null;
 
 async function activeTabHost(): Promise<string | null> {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (!tab?.url) return null;
     const url = new URL(tab.url);
     if (!/^https?:$/.test(url.protocol)) return null;
@@ -62,10 +67,18 @@ function renderEngine(status: EngineStatusResponse): void {
 
 async function refreshEngine(): Promise<void> {
   try {
-    const status = await chrome.runtime.sendMessage<RuntimeMessage, EngineStatusResponse>({ type: "engine:status" });
+    const status = await chrome.runtime.sendMessage<
+      RuntimeMessage,
+      EngineStatusResponse
+    >({ type: "engine:status" });
     renderEngine(status);
   } catch (error) {
-    renderEngine({ running: false, ready: false, backend: null, error: String(error) });
+    renderEngine({
+      running: false,
+      ready: false,
+      backend: null,
+      error: String(error),
+    });
   }
 }
 
@@ -76,7 +89,9 @@ enabledInput.addEventListener("change", () => {
 siteInput.addEventListener("change", async () => {
   if (!currentHost) return;
   const settings = await loadSettings();
-  const disabledSites = settings.disabledSites.filter((site) => site !== currentHost);
+  const disabledSites = settings.disabledSites.filter(
+    (site) => site !== currentHost,
+  );
   if (!siteInput.checked) disabledSites.push(currentHost);
   await saveSettings({ disabledSites });
 });

@@ -17,7 +17,12 @@ export interface DetectResult {
   detections: Detection[];
 }
 
-export type ClientErrorCode = DetectErrorCode | "disconnected" | "timeout" | "aborted" | "unavailable";
+export type ClientErrorCode =
+  | DetectErrorCode
+  | "disconnected"
+  | "timeout"
+  | "aborted"
+  | "unavailable";
 
 export class EngineClientError extends Error {
   constructor(
@@ -29,7 +34,13 @@ export class EngineClientError extends Error {
 
   /** Whether retrying the same request later could succeed. */
   get transient(): boolean {
-    return this.code === "disconnected" || this.code === "timeout" || this.code === "model" || this.code === "internal" || this.code === "unavailable";
+    return (
+      this.code === "disconnected" ||
+      this.code === "timeout" ||
+      this.code === "model" ||
+      this.code === "internal" ||
+      this.code === "unavailable"
+    );
   }
 }
 
@@ -86,10 +97,16 @@ export class EngineClient {
     return this.invalidated;
   }
 
-  async detect(source: DetectSource, priority: DetectPriority, options: DetectOptions = {}): Promise<DetectResult> {
-    if (options.signal?.aborted) throw new EngineClientError("aborted", "Aborted before sending.");
+  async detect(
+    source: DetectSource,
+    priority: DetectPriority,
+    options: DetectOptions = {},
+  ): Promise<DetectResult> {
+    if (options.signal?.aborted)
+      throw new EngineClientError("aborted", "Aborted before sending.");
     const port = await this.getPort();
-    if (options.signal?.aborted) throw new EngineClientError("aborted", "Aborted while connecting.");
+    if (options.signal?.aborted)
+      throw new EngineClientError("aborted", "Aborted while connecting.");
 
     const id = this.nextId++;
     return new Promise<DetectResult>((resolve, reject) => {
@@ -100,16 +117,27 @@ export class EngineClient {
         signal: options.signal,
         onAbort: null,
         timer: setTimeout(() => {
-          this.settle(id, new EngineClientError("timeout", `No answer within ${timeoutMs}ms.`), true);
+          this.settle(
+            id,
+            new EngineClientError(
+              "timeout",
+              `No answer within ${timeoutMs}ms.`,
+            ),
+            true,
+          );
         }, timeoutMs),
       };
       if (options.signal) {
-        entry.onAbort = () => this.settle(id, new EngineClientError("aborted", "Aborted."), true);
+        entry.onAbort = () =>
+          this.settle(id, new EngineClientError("aborted", "Aborted."), true);
         options.signal.addEventListener("abort", entry.onAbort, { once: true });
       }
       this.pending.set(id, entry);
       if (!this.post(port, { type: "detect", id, source, priority })) {
-        this.settle(id, new EngineClientError("disconnected", "Engine port is not usable."));
+        this.settle(
+          id,
+          new EngineClientError("disconnected", "Engine port is not usable."),
+        );
       }
     });
   }
@@ -125,7 +153,9 @@ export class EngineClient {
         // Already gone.
       }
     }
-    this.rejectAll(new EngineClientError("disconnected", "Client disconnected."));
+    this.rejectAll(
+      new EngineClientError("disconnected", "Client disconnected."),
+    );
   }
 
   // ---- connection ---------------------------------------------------------
@@ -140,35 +170,61 @@ export class EngineClient {
   }
 
   private async connect(): Promise<chrome.runtime.Port> {
-    if (this.invalidated) throw new EngineClientError("unavailable", "Extension context invalidated.");
+    if (this.invalidated)
+      throw new EngineClientError(
+        "unavailable",
+        "Extension context invalidated.",
+      );
 
     const wait = this.nextConnectAllowedAt - Date.now();
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
 
     try {
-      const response = await chrome.runtime.sendMessage<RuntimeMessage, EngineEnsureResponse | undefined>({
+      const response = await chrome.runtime.sendMessage<
+        RuntimeMessage,
+        EngineEnsureResponse | undefined
+      >({
         type: "engine:ensure",
       });
       if (!response?.ok) {
-        throw new EngineClientError("unavailable", response?.error ?? "Engine unavailable.");
+        throw new EngineClientError(
+          "unavailable",
+          response?.error ?? "Engine unavailable.",
+        );
       }
       const port = chrome.runtime.connect({ name: ENGINE_PORT_NAME });
-      port.onMessage.addListener((message: EngineServerMessage) => this.handleMessage(message));
+      port.onMessage.addListener((message: EngineServerMessage) =>
+        this.handleMessage(message),
+      );
       port.onDisconnect.addListener(() => this.handleDisconnect(port));
       this.port = port;
       this.consecutiveConnectFailures = 0;
       this.nextConnectAllowedAt = 0;
       return port;
     } catch (error) {
-      if (isExtensionContextInvalidated() || /context invalidated/i.test(errorMessage(error))) {
+      if (
+        isExtensionContextInvalidated() ||
+        /context invalidated/i.test(errorMessage(error))
+      ) {
         this.markInvalidated();
-        throw new EngineClientError("unavailable", "Extension context invalidated.");
+        throw new EngineClientError(
+          "unavailable",
+          "Extension context invalidated.",
+        );
       }
       this.consecutiveConnectFailures++;
-      const backoff = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** (this.consecutiveConnectFailures - 1));
+      const backoff = Math.min(
+        MAX_BACKOFF_MS,
+        BASE_BACKOFF_MS * 2 ** (this.consecutiveConnectFailures - 1),
+      );
       this.nextConnectAllowedAt = Date.now() + backoff;
-      log.warn(`Engine connection failed (retry in ${backoff}ms):`, errorMessage(error));
-      throw error instanceof EngineClientError ? error : new EngineClientError("unavailable", errorMessage(error));
+      log.warn(
+        `Engine connection failed (retry in ${backoff}ms):`,
+        errorMessage(error),
+      );
+      throw error instanceof EngineClientError
+        ? error
+        : new EngineClientError("unavailable", errorMessage(error));
     }
   }
 
@@ -181,18 +237,25 @@ export class EngineClient {
       return;
     }
     log.debug("Engine port disconnected.");
-    this.rejectAll(new EngineClientError("disconnected", "Engine disconnected."));
+    this.rejectAll(
+      new EngineClientError("disconnected", "Engine disconnected."),
+    );
   }
 
   private markInvalidated(): void {
     if (this.invalidated) return;
     this.invalidated = true;
     this.port = null;
-    this.rejectAll(new EngineClientError("unavailable", "Extension context invalidated."));
+    this.rejectAll(
+      new EngineClientError("unavailable", "Extension context invalidated."),
+    );
     this.onContextInvalidated?.();
   }
 
-  private post(port: chrome.runtime.Port, message: EngineClientMessage): boolean {
+  private post(
+    port: chrome.runtime.Port,
+    message: EngineClientMessage,
+  ): boolean {
     try {
       port.postMessage(message);
       return true;
@@ -215,20 +278,32 @@ export class EngineClient {
         break;
       }
       case "result":
-        this.settle(message.id, { width: message.width, height: message.height, detections: message.detections });
+        this.settle(message.id, {
+          width: message.width,
+          height: message.height,
+          detections: message.detections,
+        });
         break;
       case "error":
-        this.settle(message.id, new EngineClientError(message.code, message.error));
+        this.settle(
+          message.id,
+          new EngineClientError(message.code, message.error),
+        );
         break;
     }
   }
 
-  private settle(id: number, outcome: DetectResult | EngineClientError, sendCancel = false): void {
+  private settle(
+    id: number,
+    outcome: DetectResult | EngineClientError,
+    sendCancel = false,
+  ): void {
     const entry = this.pending.get(id);
     if (!entry) return;
     this.pending.delete(id);
     clearTimeout(entry.timer);
-    if (entry.onAbort && entry.signal) entry.signal.removeEventListener("abort", entry.onAbort);
+    if (entry.onAbort && entry.signal)
+      entry.signal.removeEventListener("abort", entry.onAbort);
     if (sendCancel && this.port) this.post(this.port, { type: "cancel", id });
     if (outcome instanceof EngineClientError) entry.reject(outcome);
     else entry.resolve(outcome);

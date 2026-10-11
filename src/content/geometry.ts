@@ -24,7 +24,9 @@ export interface NormalizedBox {
   height: number;
 }
 
-type PositionComponent = { kind: "percent"; value: number } | { kind: "length"; value: number };
+type PositionComponent =
+  | { kind: "percent"; value: number }
+  | { kind: "length"; value: number };
 
 export interface PaintStyle {
   objectFit: string;
@@ -44,22 +46,38 @@ const KEYWORD_PERCENT: Record<string, number> = {
   bottom: 100,
 };
 
-function parseComponent(token: string | undefined, fallback: number): PositionComponent {
+function parseComponent(
+  token: string | undefined,
+  fallback: number,
+): PositionComponent {
   if (!token) return { kind: "percent", value: fallback };
-  if (token in KEYWORD_PERCENT) return { kind: "percent", value: KEYWORD_PERCENT[token] };
+  if (token in KEYWORD_PERCENT)
+    return { kind: "percent", value: KEYWORD_PERCENT[token] };
   if (token.endsWith("%")) {
     const value = parseFloat(token);
-    return { kind: "percent", value: Number.isFinite(value) ? value : fallback };
+    return {
+      kind: "percent",
+      value: Number.isFinite(value) ? value : fallback,
+    };
   }
   const value = parseFloat(token);
-  return Number.isFinite(value) ? { kind: "length", value } : { kind: "percent", value: fallback };
+  return Number.isFinite(value)
+    ? { kind: "length", value }
+    : { kind: "percent", value: fallback };
 }
 
 /** Parses the computed `object-position` (Chrome serialises it as two space separated values). */
-export function parseObjectPosition(value: string): { x: PositionComponent; y: PositionComponent } {
+export function parseObjectPosition(value: string): {
+  x: PositionComponent;
+  y: PositionComponent;
+} {
   const tokens = value.trim().split(/\s+/);
   // "top left" style keyword pairs may be swapped relative to the x/y order.
-  if (tokens.length === 2 && (tokens[0] === "top" || tokens[0] === "bottom") && !(tokens[1] === "top" || tokens[1] === "bottom")) {
+  if (
+    tokens.length === 2 &&
+    (tokens[0] === "top" || tokens[0] === "bottom") &&
+    !(tokens[1] === "top" || tokens[1] === "bottom")
+  ) {
     tokens.reverse();
   }
   return { x: parseComponent(tokens[0], 50), y: parseComponent(tokens[1], 50) };
@@ -82,21 +100,38 @@ export function readPaintStyle(element: Element): PaintStyle {
 }
 
 function offset(component: PositionComponent, free: number): number {
-  return component.kind === "percent" ? (free * component.value) / 100 : component.value;
+  return component.kind === "percent"
+    ? (free * component.value) / 100
+    : component.value;
 }
 
 /**
  * Returns where the intrinsic image is painted, given the element's border box.
  * The result may extend beyond the content box for `object-fit: cover` / `none`.
  */
-export function paintedRect(borderBox: Rect, style: PaintStyle, intrinsic: Size): Rect {
+export function paintedRect(
+  borderBox: Rect,
+  style: PaintStyle,
+  intrinsic: Size,
+): Rect {
   const contentLeft = borderBox.left + style.insetLeft;
   const contentTop = borderBox.top + style.insetTop;
-  const contentWidth = Math.max(0, borderBox.width - style.insetLeft - style.insetRight);
-  const contentHeight = Math.max(0, borderBox.height - style.insetTop - style.insetBottom);
+  const contentWidth = Math.max(
+    0,
+    borderBox.width - style.insetLeft - style.insetRight,
+  );
+  const contentHeight = Math.max(
+    0,
+    borderBox.height - style.insetTop - style.insetBottom,
+  );
 
   if (!intrinsic.width || !intrinsic.height) {
-    return { left: contentLeft, top: contentTop, width: contentWidth, height: contentHeight };
+    return {
+      left: contentLeft,
+      top: contentTop,
+      width: contentWidth,
+      height: contentHeight,
+    };
   }
 
   let width = contentWidth;
@@ -149,15 +184,29 @@ export function intersectRects(a: Rect, b: Rect): Rect | null {
 }
 
 export function viewportRect(): Rect {
-  return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  return {
+    left: 0,
+    top: 0,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
 }
 
 export function rectFromDom(rect: DOMRect): Rect {
-  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
 /** Grows a normalized box by `padX`/`padY` (in normalized units) and clamps it to the image. */
-export function expandBox(box: NormalizedBox, padX: number, padY: number): NormalizedBox {
+export function expandBox(
+  box: NormalizedBox,
+  padX: number,
+  padY: number,
+): NormalizedBox {
   const x = Math.max(0, box.x - padX);
   const y = Math.max(0, box.y - padY);
   return {

@@ -36,13 +36,21 @@ export class SettingsStore {
   constructor() {
     this.ready = loadSettings()
       .then((settings) => this.update(settings))
-      .catch((error) => log.warn("Could not load settings, using defaults:", errorMessage(error)));
+      .catch((error) =>
+        log.warn(
+          "Could not load settings, using defaults:",
+          errorMessage(error),
+        ),
+      );
     onSettingsChanged((settings) => this.update(settings));
   }
 
   /** True when the extension should act in this frame (enabled and no involved site is excluded). */
   get active(): boolean {
-    return this.hostnames.every((host) => isActiveForHost(this.settings, host)) && this.settings.enabled;
+    return (
+      this.hostnames.every((host) => isActiveForHost(this.settings, host)) &&
+      this.settings.enabled
+    );
   }
 
   subscribe(listener: Listener): () => void {

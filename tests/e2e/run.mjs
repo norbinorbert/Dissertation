@@ -37,14 +37,19 @@ function startServer(crossOriginBase) {
     const url = new URL(request.url, "http://localhost");
     try {
       if (url.pathname === "/" || url.pathname === "/index.html") {
-        const html = (await readFile(path.join(fixturesDir, "index.html"), "utf8")).replace(
-          "__CROSS_ORIGIN__",
-          crossOriginBase(),
-        );
-        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+        const html = (
+          await readFile(path.join(fixturesDir, "index.html"), "utf8")
+        ).replace("__CROSS_ORIGIN__", crossOriginBase());
+        response.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store",
+        });
         response.end(html);
       } else if (url.pathname === "/cat.jpg") {
-        response.writeHead(200, { "Content-Type": "image/jpeg", "Cache-Control": "no-store" });
+        response.writeHead(200, {
+          "Content-Type": "image/jpeg",
+          "Cache-Control": "no-store",
+        });
         response.end(await readFile(fixtureImage));
       } else {
         response.writeHead(404);
@@ -56,7 +61,9 @@ function startServer(crossOriginBase) {
     }
   });
   return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port }));
+    server.listen(0, "127.0.0.1", () =>
+      resolve({ server, port: server.address().port }),
+    );
   });
 }
 
@@ -66,7 +73,10 @@ function startServer(crossOriginBase) {
  * (e.g. Chrome for Testing).
  */
 async function resolveBrowserPath() {
-  const candidates = [process.env.CHROMIUM_PATH, chromium.executablePath()].filter(Boolean);
+  const candidates = [
+    process.env.CHROMIUM_PATH,
+    chromium.executablePath(),
+  ].filter(Boolean);
   for (const candidate of candidates) {
     if (await exists(candidate)) return candidate;
   }
@@ -100,7 +110,9 @@ async function main() {
   await ensureFixtureImage();
 
   let crossOriginPort = 0;
-  const primary = await startServer(() => `http://127.0.0.1:${crossOriginPort}`);
+  const primary = await startServer(
+    () => `http://127.0.0.1:${crossOriginPort}`,
+  );
   const secondary = await startServer(() => `http://localhost:${primary.port}`);
   crossOriginPort = secondary.port;
   const pageUrl = `http://localhost:${primary.port}/index.html`;
@@ -109,20 +121,29 @@ async function main() {
   const logs = [];
   try {
     let [worker] = context.serviceWorkers();
-    if (!worker) worker = await context.waitForEvent("serviceworker", { timeout: STEP_TIMEOUT_MS });
+    if (!worker)
+      worker = await context.waitForEvent("serviceworker", {
+        timeout: STEP_TIMEOUT_MS,
+      });
     const extensionId = new URL(worker.url()).host;
     console.log(`Extension loaded: ${extensionId}`);
 
     const page = await context.newPage();
-    page.on("console", (message) => logs.push(`[page] ${message.type()}: ${message.text()}`));
-    page.on("pageerror", (error) => logs.push(`[page] error: ${error.message}`));
+    page.on("console", (message) =>
+      logs.push(`[page] ${message.type()}: ${message.text()}`),
+    );
+    page.on("pageerror", (error) =>
+      logs.push(`[page] error: ${error.message}`),
+    );
     await page.goto(pageUrl, { waitUntil: "domcontentloaded" });
 
     const stateOf = (id) =>
       page.evaluate((elementId) => {
         const element =
           document.getElementById(elementId) ??
-          document.getElementById("shadow-host")?.shadowRoot?.getElementById(elementId);
+          document
+            .getElementById("shadow-host")
+            ?.shadowRoot?.getElementById(elementId);
         return element ? element.getAttribute("data-oc-state") : "<missing>";
       }, id);
     const waitForState = (id, expected, timeout = STEP_TIMEOUT_MS) =>
@@ -130,7 +151,9 @@ async function main() {
         ([elementId, state]) => {
           const element =
             document.getElementById(elementId) ??
-            document.getElementById("shadow-host")?.shadowRoot?.getElementById(elementId);
+            document
+              .getElementById("shadow-host")
+              ?.shadowRoot?.getElementById(elementId);
           return element && element.getAttribute("data-oc-state") === state;
         },
         [id, expected],
@@ -139,27 +162,51 @@ async function main() {
     const boxCount = () =>
       page.evaluate(() => {
         const host = document.querySelector("object-censor-overlay");
-        return host?.shadowRoot ? host.shadowRoot.querySelectorAll(".box").length : 0;
+        return host?.shadowRoot
+          ? host.shadowRoot.querySelectorAll(".box").length
+          : 0;
       });
-    const blurOf = (id) => page.evaluate((elementId) => getComputedStyle(document.getElementById(elementId)).filter, id);
+    const blurOf = (id) =>
+      page.evaluate(
+        (elementId) =>
+          getComputedStyle(document.getElementById(elementId)).filter,
+        id,
+      );
 
     // 1. Media starts out blurred (no state attribute).
     const initialBlur = await blurOf("same-origin");
-    record("unprocessed image is blurred by the injected stylesheet", /blur\(/.test(initialBlur), initialBlur);
+    record(
+      "unprocessed image is blurred by the injected stylesheet",
+      /blur\(/.test(initialBlur),
+      initialBlur,
+    );
 
     // 2. First result: the engine had to start, load the model and analyse the image.
-    console.log("Waiting for the engine to analyse the first image (model load included)…");
+    console.log(
+      "Waiting for the engine to analyse the first image (model load included)…",
+    );
     await waitForState("same-origin", "censored", FIRST_RESULT_TIMEOUT_MS);
     record("same-origin cat is censored", true);
-    record("censored image is no longer blurred", !/blur\(/.test(await blurOf("same-origin")), await blurOf("same-origin"));
+    record(
+      "censored image is no longer blurred",
+      !/blur\(/.test(await blurOf("same-origin")),
+      await blurOf("same-origin"),
+    );
     const boxesAfterFirst = await boxCount();
-    record("overlay contains at least one black box", boxesAfterFirst > 0, `${boxesAfterFirst} box(es)`);
+    record(
+      "overlay contains at least one black box",
+      boxesAfterFirst > 0,
+      `${boxesAfterFirst} box(es)`,
+    );
 
     // 3. Remaining media.
     await waitForState("cross-origin", "censored");
     record("cross-origin cat is censored (engine fetched the URL)", true);
     await waitForState("plain", "clean");
-    record("plain gradient is clean and unblurred", !/blur\(/.test(await blurOf("plain")));
+    record(
+      "plain gradient is clean and unblurred",
+      !/blur\(/.test(await blurOf("plain")),
+    );
     await waitForState("tiny", "skipped");
     record("tiny image is skipped", true);
     await waitForState("poster", "censored");
@@ -180,28 +227,48 @@ async function main() {
       stateRightAfter === null || stateRightAfter === "clean",
       `state right after src change: ${stateRightAfter}`,
     );
-    record("boxes of the replaced image are removed", boxesAfter < boxesBefore, `${boxesBefore} → ${boxesAfter}`);
+    record(
+      "boxes of the replaced image are removed",
+      boxesAfter < boxesBefore,
+      `${boxesBefore} → ${boxesAfter}`,
+    );
 
     // 5. Disabling the site turns everything off; enabling it again re-processes.
     const updateSettings = (patch) =>
       worker.evaluate(async (changes) => {
         const { settings } = await chrome.storage.sync.get("settings");
-        await chrome.storage.sync.set({ settings: { ...settings, ...changes } });
+        await chrome.storage.sync.set({
+          settings: { ...settings, ...changes },
+        });
       }, patch);
     await updateSettings({ disabledSites: ["localhost"] });
-    await page.waitForFunction(() => document.documentElement.hasAttribute("data-oc-off"), null, {
-      timeout: STEP_TIMEOUT_MS,
-    });
-    record("disabling the site removes all censoring", !/blur\(/.test(await blurOf("cross-origin")) && (await boxCount()) === 0);
+    await page.waitForFunction(
+      () => document.documentElement.hasAttribute("data-oc-off"),
+      null,
+      {
+        timeout: STEP_TIMEOUT_MS,
+      },
+    );
+    record(
+      "disabling the site removes all censoring",
+      !/blur\(/.test(await blurOf("cross-origin")) && (await boxCount()) === 0,
+    );
     await updateSettings({ disabledSites: [] });
     await waitForState("cross-origin", "censored");
     record("re-enabling the site restores censoring", (await boxCount()) > 0);
 
     // 6. Engine status is reported to the popup.
-    const status = await worker.evaluate(() =>
-      new Promise((resolve) => chrome.runtime.sendMessage({ type: "engine:status" }, resolve)),
+    const status = await worker.evaluate(
+      () =>
+        new Promise((resolve) =>
+          chrome.runtime.sendMessage({ type: "engine:status" }, resolve),
+        ),
     );
-    record("engine reports ready", Boolean(status?.ready), JSON.stringify(status));
+    record(
+      "engine reports ready",
+      Boolean(status?.ready),
+      JSON.stringify(status),
+    );
   } catch (error) {
     record("unexpected failure", false, error.message);
     console.log("\n--- captured console output ---");

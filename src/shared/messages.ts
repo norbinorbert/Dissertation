@@ -55,7 +55,8 @@ export const DetectPriority = {
   VisibleImage: 1,
   NearbyImage: 2,
 } as const;
-export type DetectPriority = (typeof DetectPriority)[keyof typeof DetectPriority];
+export type DetectPriority =
+  (typeof DetectPriority)[keyof typeof DetectPriority];
 
 export interface DetectRequest {
   type: "detect";
@@ -99,4 +100,9 @@ export type EngineServerMessage =
       detections: Detection[];
     }
   | { type: "error"; id: number; code: DetectErrorCode; error: string }
-  | { type: "status"; ready: boolean; backend: string | null; error: string | null };
+  | {
+      type: "status";
+      ready: boolean;
+      backend: string | null;
+      error: string | null;
+    };
