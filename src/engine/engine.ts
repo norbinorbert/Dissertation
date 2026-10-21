@@ -298,28 +298,14 @@ class Engine {
   private async decode(request: DetectRequest): Promise<DecodedSource> {
     const { source } = request;
     if (source.kind === "data") {
-      const image = new Image();
-      image.src = source.dataUrl;
+      let blob: Blob;
       try {
-        // TODO: check what timeout is reasonable
-        await Promise.race([
-          image.decode(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Decode timed out")), 100),
-          ),
-        ]);
+        blob = await (await fetch(source.dataUrl)).blob();
       } catch {
         log.warn("Data URL image failed to decode.");
         throw new DetectError("decode", "Capture could not be decoded.");
       }
-      if (!image.naturalWidth || !image.naturalHeight) {
-        throw new DetectError("decode", "Capture has no pixels.");
-      }
-      return {
-        element: image,
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      };
+      return this.decodeBitmap(blob, blob.type || "unknown type");
     }
 
     const blob = await this.fetchImage(source.url);
@@ -327,13 +313,20 @@ class Engine {
     if (type === "image/svg+xml") {
       throw new DetectError("unsupported", "Vector graphics are not analysed.");
     }
+    return this.decodeBitmap(blob, type || "unknown type");
+  }
+
+  private async decodeBitmap(
+    blob: Blob,
+    type: string,
+  ): Promise<DecodedSource> {
     let bitmap: ImageBitmap;
     try {
       bitmap = await createImageBitmap(blob);
     } catch {
       throw new DetectError(
         "decode",
-        `Response (${type || "unknown type"}) is not a decodable image.`,
+        `Response (${type}) is not a decodable image.`,
       );
     }
     try {
